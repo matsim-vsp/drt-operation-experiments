@@ -36,8 +36,8 @@ import org.matsim.core.router.speedy.SpeedyALTFactory;
 import org.matsim.core.router.util.LeastCostPathCalculator;
 import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
-import org.matsim.drtExperiments.offlineStrategy.OfflineRequestsSolver;
-import org.matsim.drtExperiments.onlineStrategy.OnlineInserter;
+import org.matsim.drtExperiments.offlineStrategy.OfflineSolver;
+import org.matsim.drtExperiments.onlineStrategy.OnlineSolver;
 
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
@@ -63,8 +63,8 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
     private final VehicleEntry.EntryFactory vehicleEntryFactory;
 
     private final Map<Id<Person>, DrtRequest> openRequests = new HashMap<>();
-    private final OfflineRequestsSolver solver;
-    private final OnlineInserter inserter;
+    private final OfflineSolver solver;
+    private final OnlineSolver inserter;
 
     private final double horizon;
     private final double interval; // Must be smaller than or equal to the horizon
@@ -88,7 +88,7 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
                                         EventsManager eventsManager, ScheduleTimingUpdater scheduleTimingUpdater,
                                         TravelDisutility travelDisutility, DrtConfigGroup drtCfg,
                                         Fleet fleet, ForkJoinPool forkJoinPool, VehicleEntry.EntryFactory vehicleEntryFactory,
-                                        OfflineRequestsSolver solver, OnlineInserter inserter, Population plans,
+                                        OfflineSolver solver, OnlineSolver inserter, Population plans,
                                         double horizon, double interval, Population prebookedTrips) {
         this.network = network;
         this.travelTime = travelTime;

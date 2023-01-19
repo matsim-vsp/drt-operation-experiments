@@ -23,15 +23,15 @@ import java.util.Map;
 
 import static org.matsim.contrib.dvrp.path.VrpPaths.FIRST_LINK_TT;
 
-class BasicOnlineInsertionStrategy implements OnlineInserter {
+public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
     private final Network network;
     private final double stopDuration;
     private final TravelTimeMatrix travelTimeMatrix;
     private final TravelTime travelTime;
     private final LeastCostPathCalculator router;
 
-    BasicOnlineInsertionStrategy(Network network, DrtConfigGroup drtConfigGroup, TravelTimeMatrix travelTimeMatrix,
-                                 TravelTime travelTime, TravelDisutility travelDisutility) {
+    public OnlineSolverBasicInsertionStrategy(Network network, DrtConfigGroup drtConfigGroup, TravelTimeMatrix travelTimeMatrix,
+                                       TravelTime travelTime, TravelDisutility travelDisutility) {
         this.network = network;
         this.stopDuration = drtConfigGroup.stopDuration;
         this.travelTimeMatrix = travelTimeMatrix;

@@ -9,7 +9,7 @@ import org.matsim.drtExperiments.basicStructures.OnlineVehicleInfo;
 import java.util.List;
 import java.util.Map;
 
-public interface OfflineRequestsSolver {
+public interface OfflineSolver {
     FleetSchedules calculate(FleetSchedules previousSchedules,
                              Map<Id<DvrpVehicle>, OnlineVehicleInfo> onlineVehicleInfoMap,
                              List<GeneralRequest> newRequests, double time);

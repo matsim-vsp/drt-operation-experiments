@@ -16,12 +16,12 @@ import java.util.*;
 
 import static java.util.stream.Collectors.toMap;
 
-public class OfflineSolverSeqInsertion implements OfflineRequestsSolver {
+public class OfflineSolverSeqInsertion implements OfflineSolver {
     private final Network network;
     private final TravelTime travelTime;
     private final double stopDuration;
 
-    OfflineSolverSeqInsertion(Network network, TravelTime travelTime, DrtConfigGroup drtConfigGroup) {
+    public OfflineSolverSeqInsertion(Network network, TravelTime travelTime, DrtConfigGroup drtConfigGroup) {
         this.network = network;
         this.travelTime = travelTime;
         this.stopDuration = drtConfigGroup.stopDuration;

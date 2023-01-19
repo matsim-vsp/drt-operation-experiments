@@ -1,11 +1,10 @@
 package org.matsim.drtExperiments.run;
 
-import org.matsim.api.core.v01.population.Population;
 import org.matsim.application.MATSimAppCommand;
 import org.matsim.contrib.drt.analysis.afterSimAnalysis.DrtVehicleStoppingTaskWriter;
 import org.matsim.contrib.drt.extension.preplanned.optimizer.WaitForStopTask;
-import org.matsim.contrib.drt.extension.preplanned.run.PreplannedDrtControlerCreator;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
+import org.matsim.contrib.drt.run.DrtControlerCreator;
 import org.matsim.contrib.drt.run.MultiModeDrtConfigGroup;
 import org.matsim.contrib.dvrp.benchmark.DvrpBenchmarkTravelTimeModule;
 import org.matsim.contrib.dvrp.run.DvrpConfigGroup;
@@ -13,20 +12,17 @@ import org.matsim.contrib.dvrp.run.DvrpModule;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
-import org.matsim.core.population.PopulationUtils;
-import org.matsim.drtExperiments.run.modules.LinearStopDurationModule;
-import org.matsim.drtExperiments.run.modules.OnlineAndOfflineDrtOperationModule;
 import org.matsim.drtExperiments.utils.DrtPerformanceQuantification;
+import org.matsim.drtExperiments.run.modules.LinearStopDurationModule;
 import picocli.CommandLine;
 
 import java.nio.file.Path;
 
 /**
- * This run script can be used to test the new online strategy. It is a special case for the mixed DRT operation.
- * The pre-booked trips are set to empty. Therefore, all the trips will be solved by the online solver. *
- * * *
+ * Use the current DRT online insertion search strategy. The performance and the speed of the new strategy *
+ * can be compared to this benchmark *
  */
-public class RunOnlineStrategy implements MATSimAppCommand {
+public class RunDefaultOnlineStrategy implements MATSimAppCommand {
     @CommandLine.Option(names = "--config", description = "path to config file", required = true)
     private String configPath;
 
@@ -34,29 +30,27 @@ public class RunOnlineStrategy implements MATSimAppCommand {
     private String outputDirectory;
 
     public static void main(String[] args) {
-        new RunOnlineStrategy().execute(args);
+        new RunDefaultOnlineStrategy().execute(args);
     }
 
     @Override
     public Integer call() throws Exception {
+        // Record the starting time
         long startTime = System.currentTimeMillis();
 
         Config config = ConfigUtils.loadConfig(configPath, new MultiModeDrtConfigGroup(), new DvrpConfigGroup());
         MultiModeDrtConfigGroup multiModeDrtConfig = MultiModeDrtConfigGroup.get(config);
         config.controler().setOutputDirectory(outputDirectory);
-        Controler controler = PreplannedDrtControlerCreator.createControler(config, false);
+
+        Controler controler = DrtControlerCreator.createControler(config, false);
         controler.addOverridingModule(new DvrpModule(new DvrpBenchmarkTravelTimeModule()));
 
-        // Install the new DRT optimizer and the linear stop duration
-        Population prebookedPlans = PopulationUtils.createPopulation(ConfigUtils.createConfig()); // Set the pre-booked plans empty --> no pre-booked trips
+        // Add mode module
         for (DrtConfigGroup drtCfg : multiModeDrtConfig.getModalElements()) {
-            controler.addOverridingQSimModule(new OnlineAndOfflineDrtOperationModule(prebookedPlans, drtCfg,
-                    86400, 86400, 0, false, 0, OnlineAndOfflineDrtOperationModule.OfflineSolverType.SEQ_INSERTION));
             controler.addOverridingModule(new LinearStopDurationModule(drtCfg));
         }
         controler.run();
 
-        // Post-run Analysis
         // Compute time used
         long timeUsed = (System.currentTimeMillis() - startTime) / 1000;
 

@@ -9,7 +9,7 @@ import org.matsim.drtExperiments.basicStructures.TimetableEntry;
 import java.util.List;
 import java.util.Map;
 
-public interface OnlineInserter {
+public interface OnlineSolver {
     Id<DvrpVehicle> insert(DrtRequest request, Map<Id<DvrpVehicle>, List<TimetableEntry>> timetables,
                            Map<Id<DvrpVehicle>, OnlineVehicleInfo> realTimeVehicleInfoMap);
 }
