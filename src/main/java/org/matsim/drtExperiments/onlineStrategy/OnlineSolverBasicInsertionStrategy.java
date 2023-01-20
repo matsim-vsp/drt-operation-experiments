@@ -53,8 +53,6 @@ public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
         double bestInsertionCost = Double.MAX_VALUE;
         DvrpVehicle selectedVehicle = null;
         List<TimetableEntry> updatedTimetable = null;
-        double estPickUpTime = -1;
-        double estDropOffTime = -1;
 
         for (Id<DvrpVehicle> vehicleId : timetables.keySet()) {
             OnlineVehicleInfo vehicleInfo = realTimeVehicleInfoMap.get(vehicleId);
@@ -82,8 +80,6 @@ public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
                     updatedTimetable.add(new TimetableEntry(spontaneousRequest, TimetableEntry.StopType.PICKUP, arrivalTimePickUp, arrivalTimePickUp + stopDuration, 0, stopDuration, selectedVehicle));
                     updatedTimetable.add(new TimetableEntry(spontaneousRequest, TimetableEntry.StopType.DROP_OFF, arrivalTimeDropOff, arrivalTimeDropOff + stopDuration, 1, stopDuration, selectedVehicle));
                     // Note: The departure time of the last stop is actually not meaningful, but this stop may become non-last stop later, therefore, we set the departure time of this stop as if it is a middle stop
-                    estPickUpTime = arrivalTimePickUp;
-                    estDropOffTime = arrivalTimeDropOff;
                 }
                 continue;
             }
@@ -159,8 +155,6 @@ public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
                                 updatedTimetable = insertDropOff(temporaryTimetable, j + 1, dropOffStopToInsert, delayCausedByDropOffDetour + stopDuration);
                                 bestInsertionCost = totalInsertionCost;
                                 selectedVehicle = vehicleInfo.vehicle();
-                                estPickUpTime = pickupTime;
-                                estDropOffTime = dropOffTime;
                             }
                         } else {
                             // Append drop off at the end
@@ -175,8 +169,6 @@ public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
                                 updatedTimetable = insertDropOff(temporaryTimetable, j + 1, dropOffStopToInsert, detourC + stopDuration);
                                 bestInsertionCost = totalInsertionCost;
                                 selectedVehicle = vehicleInfo.vehicle();
-                                estPickUpTime = pickupTime;
-                                estDropOffTime = dropOffTime;
                             }
                         }
                     }
@@ -203,8 +195,6 @@ public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
                         updatedTimetable = insertDropOff(temporaryTimetable, temporaryTimetable.size(), dropOffStopToInsert, tripTravelTime + stopDuration);
                         bestInsertionCost = totalInsertionCost;
                         selectedVehicle = vehicleInfo.vehicle();
-                        estPickUpTime = pickupTime;
-                        estDropOffTime = dropOffTime;
                     }
                 }
             }
@@ -212,7 +202,7 @@ public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
 
         // Insert the request to the best vehicle
         if (selectedVehicle != null) {
-            formalizeTimetable(realTimeVehicleInfoMap.get(selectedVehicle.getId()), updatedTimetable);
+            updateTimetableWithAccurateTravelTime(realTimeVehicleInfoMap.get(selectedVehicle.getId()), updatedTimetable);
             timetables.put(selectedVehicle.getId(), updatedTimetable);
             return selectedVehicle.getId();
         }
@@ -222,7 +212,7 @@ public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
     /**
      * Re-calculate the timetable based on accurate travel time information
      */
-    private void formalizeTimetable(OnlineVehicleInfo onlineVehicleInfo, List<TimetableEntry> updatedTimetable) {
+    private void updateTimetableWithAccurateTravelTime(OnlineVehicleInfo onlineVehicleInfo, List<TimetableEntry> updatedTimetable) {
         double currentTime = onlineVehicleInfo.divertableTime();
         Link currentLink = onlineVehicleInfo.currentLink();
         for (TimetableEntry stop : updatedTimetable) {

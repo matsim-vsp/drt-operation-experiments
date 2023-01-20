@@ -18,9 +18,12 @@ import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.drtExperiments.basicStructures.OnlineAndOfflineDrtOptimizer;
 import org.matsim.drtExperiments.offlineStrategy.OfflineSolver;
+import org.matsim.drtExperiments.offlineStrategy.OfflineSolverJsprit;
 import org.matsim.drtExperiments.offlineStrategy.OfflineSolverSeqInsertion;
 import org.matsim.drtExperiments.onlineStrategy.OnlineSolver;
 import org.matsim.drtExperiments.onlineStrategy.OnlineSolverBasicInsertionStrategy;
+
+import java.util.Random;
 
 public class OnlineAndOfflineDrtOperationModule extends AbstractDvrpModeQSimModule {
     private final Population prebookedPlans;
@@ -66,10 +69,10 @@ public class OnlineAndOfflineDrtOperationModule extends AbstractDvrpModeQSimModu
                         getter.getModal(TravelDisutilityFactory.class).createTravelDisutility(getter.getModal(TravelTime.class)))));
 
         switch (offlineSolverType) {
-//            case JSPRIT -> bindModal(PrebookedRequestsSolver.class).toProvider(modalProvider(
-//                    getter -> new PrebookedRequestsSolverJsprit(
-//                            new PrebookedRequestsSolverJsprit.Options(maxIteration, multiThread, new Random(seed)),
-//                            drtConfigGroup, getter.getModal(Network.class), getter.getModal(TravelTime.class))));
+            case JSPRIT -> bindModal(OfflineSolver.class).toProvider(modalProvider(
+                    getter -> new OfflineSolverJsprit(
+                            new OfflineSolverJsprit.Options(maxIteration, multiThread, new Random(seed)),
+                            drtConfigGroup, getter.getModal(Network.class), getter.getModal(TravelTime.class))));
             case SEQ_INSERTION -> bindModal(OfflineSolver.class).toProvider(modalProvider(
                     getter -> new OfflineSolverSeqInsertion(
                             getter.getModal(Network.class), getter.getModal(TravelTime.class), drtConfigGroup)));

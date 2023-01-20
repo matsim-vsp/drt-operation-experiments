@@ -14,8 +14,6 @@ import org.matsim.drtExperiments.basicStructures.TimetableEntry;
 
 import java.util.*;
 
-import static java.util.stream.Collectors.toMap;
-
 public class OfflineSolverSeqInsertion implements OfflineSolver {
     private final Network network;
     private final TravelTime travelTime;
