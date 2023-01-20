@@ -40,6 +40,9 @@ public class RunDrtWithPrebooking implements MATSimAppCommand {
     @CommandLine.Option(names = "--prebooked-solver", defaultValue = "SEQ_INSERTION", description = "Prebooked trips solver")
     private OnlineAndOfflineDrtOperationModule.OfflineSolverType offlineSolver;
 
+    @CommandLine.Option(names = "--iterations", description = "number of iterations for iterative offline solver", defaultValue = "0")
+    private int iterations;
+
     public static void main(String[] args) {
         new RunDrtWithPrebooking().execute(args);
     }
@@ -65,7 +68,7 @@ public class RunDrtWithPrebooking implements MATSimAppCommand {
         // Install the new DRT optimizer and the linear stop duration
         for (DrtConfigGroup drtCfg : multiModeDrtConfig.getModalElements()) {
             controler.addOverridingQSimModule(new OnlineAndOfflineDrtOperationModule(prebookedPlans, drtCfg,
-                    horizon, interval, 0, false, 0, offlineSolver));
+                    horizon, interval, iterations, false, 0, offlineSolver));
             controler.addOverridingModule(new LinearStopDurationModule(drtCfg));
         }
         controler.run();
@@ -76,7 +79,7 @@ public class RunDrtWithPrebooking implements MATSimAppCommand {
 
         // Compute the score based on the objective function of the VRP solver
         DrtPerformanceQuantification resultsQuantification = new DrtPerformanceQuantification();
-        resultsQuantification.analyzeRollingHorizon(Path.of(outputDirectory), timeUsed, "NA", Double.toString(horizon), Double.toString(interval));
+        resultsQuantification.analyzeRollingHorizon(Path.of(outputDirectory), timeUsed, Integer.toString(iterations), Double.toString(horizon), Double.toString(interval));
         resultsQuantification.writeResultsRollingHorizon(Path.of(outputDirectory));
 
         // Plot DRT stopping tasks
