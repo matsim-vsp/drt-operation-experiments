@@ -13,6 +13,7 @@ import org.matsim.drtExperiments.basicStructures.OnlineVehicleInfo;
 import org.matsim.drtExperiments.basicStructures.TimetableEntry;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * The parallel insertion strategy with regression heuristic *
@@ -98,28 +99,27 @@ public class OfflineSolverRegretHeuristic implements OfflineSolver {
                 }
             }
 
-            if (largestRegret != 0) {
+            assert requestWithLargestRegret != null;
+            InsertionData insertionData = getBestInsertionForRequest(requestWithLargestRegret, insertionMatrix);
+
+            if (insertionData.cost < NOT_FEASIBLE_COST) {
                 // Formally insert the request to the timetable
-                assert requestWithLargestRegret != null;
-                InsertionData insertionData = getBestInsertionForRequest(requestWithLargestRegret, insertionMatrix);
                 previousSchedules.requestIdToVehicleMap().put(requestWithLargestRegret.passengerId(), insertionData.vehicleInfo.vehicle().getId());
                 previousSchedules.vehicleToTimetableMap().put(insertionData.vehicleInfo.vehicle().getId(), insertionData.candidateTimetable);
 
                 // Remove the request from the insertion matrix
                 insertionMatrix.remove(requestWithLargestRegret);
 
+                // Update insertion data for between the rest of the request and the selected vehicle
                 for (GeneralRequest request : insertionMatrix.keySet()) {
-                    // Update insertion data
                     InsertionData updatedInsertionData = insertRequestToVehicle(insertionData.vehicleInfo, request, previousSchedules, linkToLinkTravelTimeMatrix);
                     insertionMatrix.get(request).put(insertionData.vehicleInfo, updatedInsertionData);
                 }
             } else {
-                // Hint: If regret == 0 -> No feasible insertion -> reject the request
-                // Also, the largest regret == 0 means other regret is also 0 -> reject all remaining requests
-                for (GeneralRequest request : insertionMatrix.keySet()) {
-                    previousSchedules.rejectedRequests().add(request.passengerId());
-                }
-                insertionMatrix.clear();
+                // The best insertion is already infeasible. Reject this request and rem
+                previousSchedules.rejectedRequests().add(requestWithLargestRegret.passengerId());
+                // Remove the request from the insertion matrix
+                insertionMatrix.remove(requestWithLargestRegret);
             }
             finished = insertionMatrix.isEmpty();
         }
@@ -276,15 +276,9 @@ public class OfflineSolverRegretHeuristic implements OfflineSolver {
     }
 
     private double getRegret(GeneralRequest request, Map<GeneralRequest, Map<OnlineVehicleInfo, InsertionData>> insertionMatrix) {
-        double minInsertionCost = Double.MAX_VALUE;
-        double sumInsertionCost = 0;
-        for (InsertionData insertionData : insertionMatrix.get(request).values()) {
-            sumInsertionCost += insertionData.cost;
-            if (insertionData.cost < minInsertionCost) {
-                minInsertionCost = insertionData.cost;
-            }
-        }
-        return sumInsertionCost - minInsertionCost * insertionMatrix.get(request).size();
+        List<InsertionData> insertionDataList = new ArrayList<>(insertionMatrix.get(request).values());
+        insertionDataList.sort(Comparator.comparingDouble(insertionData -> insertionData.cost));
+        return insertionDataList.get(1).cost + insertionDataList.get(2).cost - 2 * insertionDataList.get(0).cost; //  3-regret. It can be switched to 2-regret, 4-regret, 5-regret ... q-regret
     }
 
     private InsertionData getBestInsertionForRequest(
