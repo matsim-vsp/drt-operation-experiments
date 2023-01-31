@@ -278,7 +278,8 @@ public class OfflineSolverRegretHeuristic implements OfflineSolver {
     private double getRegret(GeneralRequest request, Map<GeneralRequest, Map<OnlineVehicleInfo, InsertionData>> insertionMatrix) {
         List<InsertionData> insertionDataList = new ArrayList<>(insertionMatrix.get(request).values());
         insertionDataList.sort(Comparator.comparingDouble(insertionData -> insertionData.cost));
-        return insertionDataList.get(1).cost + insertionDataList.get(2).cost - 2 * insertionDataList.get(0).cost; //  3-regret. It can be switched to 2-regret, 4-regret, 5-regret ... q-regret
+        return insertionDataList.get(1).cost + insertionDataList.get(2).cost - 2 * insertionDataList.get(0).cost;
+        //  regret-3 is used here. It can also be switched to regret-2, regret-4, regret-5 ... regret-q
     }
 
     private InsertionData getBestInsertionForRequest(
