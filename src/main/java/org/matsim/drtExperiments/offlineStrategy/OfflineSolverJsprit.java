@@ -298,14 +298,14 @@ public class OfflineSolverJsprit implements OfflineSolver {
             }
         }
 
-        List<Id<Person>> rejectedRequests = new ArrayList<>();
+        Map<Id<Person>, GeneralRequest> rejectedRequests = new HashMap<>();
         for (Job job : bestSolution.getUnassignedJobs()) {
             GeneralRequest rejectedRequest = preplannedRequestByShipmentId.get(job.getId());
-            rejectedRequests.add(rejectedRequest.passengerId());
+            rejectedRequests.put(rejectedRequest.passengerId(), rejectedRequest);
         }
 
         if (previousSchedules != null) {
-            rejectedRequests.addAll(previousSchedules.rejectedRequests());
+            rejectedRequests.putAll(previousSchedules.rejectedRequests());
             // Previously rejected requests whose "departure time" is not yet reached (i.e., not yet formally rejected in the DRT system)
         }
 

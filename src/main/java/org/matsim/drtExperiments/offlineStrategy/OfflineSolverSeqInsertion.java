@@ -35,7 +35,7 @@ public class OfflineSolverSeqInsertion implements OfflineSolver {
                 vehicleToTimetableMap.put(vehicleInfo.vehicle().getId(), new ArrayList<>());
             }
             Map<Id<Person>, Id<DvrpVehicle>> requestIdToVehicleMap = new HashMap<>();
-            List<Id<Person>> rejectedRequests = new ArrayList<>();
+            Map<Id<Person>, GeneralRequest> rejectedRequests = new HashMap<>();
             previousSchedules = new FleetSchedules(vehicleToTimetableMap, requestIdToVehicleMap, rejectedRequests);
         }
 
@@ -223,7 +223,7 @@ public class OfflineSolverSeqInsertion implements OfflineSolver {
             }
 
             if (selectedVehicle == null) {
-                previousSchedules.rejectedRequests().add(request.passengerId());
+                previousSchedules.rejectedRequests().put(request.passengerId(), request);
             } else {
                 previousSchedules.vehicleToTimetableMap().put(selectedVehicle.getId(), updatedTimetable);
                 previousSchedules.requestIdToVehicleMap().put(request.passengerId(), selectedVehicle.getId());

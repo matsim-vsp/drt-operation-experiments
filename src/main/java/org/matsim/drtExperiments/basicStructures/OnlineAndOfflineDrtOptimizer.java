@@ -123,11 +123,11 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
         openRequests.put(((DrtRequest) request).getPassengerId(), drtRequest);
 
         if (fleetSchedules.requestIdToVehicleMap().containsKey(passengerId)
-                || fleetSchedules.rejectedRequests().contains(passengerId)) {
+                || fleetSchedules.rejectedRequests().containsKey(passengerId)) {
             // This is a pre-booked request
             Id<DvrpVehicle> vehicleId = fleetSchedules.requestIdToVehicleMap().get(passengerId);
             if (vehicleId == null) {
-                Preconditions.checkState(fleetSchedules.rejectedRequests().contains(passengerId),
+                Preconditions.checkState(fleetSchedules.rejectedRequests().containsKey(passengerId),
                         "Pre-planned request (%s) not assigned to any vehicle and not marked as unassigned.",
                         passengerId);
                 eventsManager.processEvent(new PassengerRequestRejectedEvent(timer.getTimeOfDay(), mode, request.getId(),
@@ -149,7 +149,8 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
             if (selectedVehicleId != null) {
                 eventsManager.processEvent(
                         new PassengerRequestScheduledEvent(timer.getTimeOfDay(), drtRequest.getMode(), drtRequest.getId(),
-                                drtRequest.getPassengerId(), selectedVehicleId, Double.NaN, Double.NaN)); //TODO add estimated pickup / arrival time
+                                drtRequest.getPassengerId(), selectedVehicleId, Double.NaN, Double.NaN));
+                //TODO add estimated pickup / arrival time
                 updateVehicleCurrentTask(realTimeVehicleInfoMap.get(selectedVehicleId), now);
             } else {
                 eventsManager.processEvent(new PassengerRequestRejectedEvent(timer.getTimeOfDay(), mode, request.getId(),

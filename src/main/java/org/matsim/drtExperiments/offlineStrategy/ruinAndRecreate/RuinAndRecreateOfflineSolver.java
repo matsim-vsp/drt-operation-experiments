@@ -77,8 +77,8 @@ public class RuinAndRecreateOfflineSolver implements OfflineSolver {
             }
 
             // Recreate: try to re-insert all the removed requests, along with rejected requests, back into the schedule
-            // TODO: FIXME It is not feasible to track the rejected requests now!!!
-//            regretInserter.performRegretInsertion(insertionCalculator, newSolution, onlineVehicleInfoMap, newSolution.rejectedRequests());
+            // TODO consider change the list to set in the input argument
+            regretInserter.performRegretInsertion(insertionCalculator, newSolution, onlineVehicleInfoMap, (List<GeneralRequest>) newSolution.rejectedRequests().values());
 
             // Score the new solution
             double newScore = solutionCostCalculator.calculateSolutionCost(newSolution, time);

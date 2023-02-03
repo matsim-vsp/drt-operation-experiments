@@ -33,7 +33,7 @@ public class InsertionCalculator {
      * Compute the cost to insert the request in to the vehicle.
      */
     public InsertionData computeInsertionData(OnlineVehicleInfo vehicleInfo, GeneralRequest request,
-                                       FleetSchedules previousSchedules) {
+                                              FleetSchedules previousSchedules) {
         Link fromLink = network.getLinks().get(request.fromLinkId());
         Link toLink = network.getLinks().get(request.toLinkId());
         Link currentLink = vehicleInfo.currentLink();
@@ -230,7 +230,7 @@ public class InsertionCalculator {
 
         // put the request in the rejection list
         previousSchedule.requestIdToVehicleMap().remove(requestToRemove.passengerId());
-        previousSchedule.rejectedRequests().add(requestToRemove.passengerId());
+        previousSchedule.rejectedRequests().put(requestToRemove.passengerId(), requestToRemove);
 
     }
 

@@ -37,7 +37,7 @@ public class OfflineSolverRegretHeuristic implements OfflineSolver {
                 vehicleToTimetableMap.put(vehicleInfo.vehicle().getId(), new ArrayList<>());
             }
             Map<Id<Person>, Id<DvrpVehicle>> requestIdToVehicleMap = new HashMap<>();
-            List<Id<Person>> rejectedRequests = new ArrayList<>();
+            Map<Id<Person>, GeneralRequest> rejectedRequests = new HashMap<>();
             previousSchedules = new FleetSchedules(vehicleToTimetableMap, requestIdToVehicleMap, rejectedRequests);
         }
 
@@ -129,7 +129,7 @@ public class OfflineSolverRegretHeuristic implements OfflineSolver {
                 }
             } else {
                 // The best insertion is already infeasible. Reject this request
-                previousSchedules.rejectedRequests().add(requestWithLargestRegret.passengerId());
+                previousSchedules.rejectedRequests().put(requestWithLargestRegret.passengerId(), requestWithLargestRegret);
                 // Remove the request from the insertion matrix
                 insertionMatrix.remove(requestWithLargestRegret);
             }
