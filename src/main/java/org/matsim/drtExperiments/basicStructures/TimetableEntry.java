@@ -52,11 +52,11 @@ public class TimetableEntry {
         return effectiveDelay;
     }
 
-    public void addPickupBeforeTheStop() {
+    public void increaseOccupancyByOne() {
         occupancyBeforeStop += 1;
     }
 
-    public void addDropOffBeforeTheStop() {
+    public void decreaseOccupancyByOne() {
         occupancyBeforeStop -= 1;
     }
 

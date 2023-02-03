@@ -208,6 +208,7 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
                     var request = Preconditions.checkNotNull(openRequests.remove(nextStop.getRequest().passengerId()),
                             "Request (%s) has not been yet submitted", nextStop.getRequest());
                     stopTask.addDropoffRequest(AcceptedDrtRequest.createFromOriginalRequest(request));
+                    fleetSchedules.requestIdToVehicleMap().remove(request.getPassengerId());
                 }
                 schedule.addTask(stopTask);
                 stopsToVisit.remove(0); //remove the first entry in the stops to visit list

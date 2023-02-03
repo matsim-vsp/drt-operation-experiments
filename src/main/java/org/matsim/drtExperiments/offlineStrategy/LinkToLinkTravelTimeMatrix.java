@@ -23,7 +23,7 @@ import static org.matsim.contrib.dvrp.path.VrpPaths.FIRST_LINK_TT;
 /**
  * Link to link travel time to be used by the offline solver *
  */
-class LinkToLinkTravelTimeMatrix {
+public class LinkToLinkTravelTimeMatrix {
     private final TravelTimeMatrix nodeToNodeTravelTimeMatrix;
     private final TravelTime travelTime;
     private final Network network;
@@ -34,7 +34,7 @@ class LinkToLinkTravelTimeMatrix {
         this.nodeToNodeTravelTimeMatrix = calculateTravelTimeMatrix(relevantLinks, time);
     }
 
-    double getTravelTime(Link fromLink, Link toLink, double departureTime) {
+    public double getTravelTime(Link fromLink, Link toLink, double departureTime) {
         if (fromLink.getId().toString().equals(toLink.getId().toString())) {
             return 0;
         }
