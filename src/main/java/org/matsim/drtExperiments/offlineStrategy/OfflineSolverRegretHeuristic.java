@@ -87,10 +87,10 @@ public class OfflineSolverRegretHeuristic implements OfflineSolver {
 
     public FleetSchedules performRegretInsertion(InsertionCalculator insertionCalculator, FleetSchedules previousSchedules,
                                                  Map<Id<DvrpVehicle>, OnlineVehicleInfo> onlineVehicleInfoMap, List<GeneralRequest> newRequests) {
-        // Initialize the matrix
-        Map<GeneralRequest, Map<OnlineVehicleInfo, InsertionCalculator.InsertionData>> insertionMatrix = new HashMap<>();
+        // Initialize the matrix (LinkedHashMap is used to preserved order of the matrix -> reproducible results even if there are plans with same max regret/score)
+        Map<GeneralRequest, Map<OnlineVehicleInfo, InsertionCalculator.InsertionData>> insertionMatrix = new LinkedHashMap<>();
         for (GeneralRequest request : newRequests) {
-            insertionMatrix.put(request, new HashMap<>());
+            insertionMatrix.put(request, new LinkedHashMap<>());
             for (OnlineVehicleInfo vehicleInfo : onlineVehicleInfoMap.values()) {
                 InsertionCalculator.InsertionData insertionData = insertionCalculator.computeInsertionData(vehicleInfo, request, previousSchedules);
                 insertionMatrix.get(request).put(vehicleInfo, insertionData);
