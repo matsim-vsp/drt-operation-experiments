@@ -8,7 +8,8 @@ import java.util.*;
 
 public class RandomRuinSelector implements RuinSelector {
     private final Random random = new Random(1234);
-    private final static double PROPORTION_TO_REMOVE = 0.05;
+    private final static double PROPORTION_TO_REMOVE = 0.1;
+
 
     @Override
     public Set<GeneralRequest> selectRequestsToBeRuined(FleetSchedules fleetSchedules) {
@@ -18,7 +19,9 @@ public class RandomRuinSelector implements RuinSelector {
         }
 
         Collections.shuffle(openRequests, random);
-        int numToRemoved = (int) (openRequests.size() * PROPORTION_TO_REMOVE);
+        int numToRemoved = (int) (openRequests.size() * PROPORTION_TO_REMOVE) + 1;
+        int maxRemoval = 1000;
+        numToRemoved = Math.min(numToRemoved, maxRemoval);
         Set<GeneralRequest> requestsToBeRuined = new HashSet<>();
         for (int i = 0; i < numToRemoved; i++) {
             requestsToBeRuined.add(openRequests.get(i));

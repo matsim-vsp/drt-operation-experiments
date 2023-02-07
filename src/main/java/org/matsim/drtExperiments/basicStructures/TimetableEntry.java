@@ -18,8 +18,8 @@ public class TimetableEntry {
     private double slackTime;
 
     public TimetableEntry(GeneralRequest request, StopType stopType, double arrivalTime,
-                   double departureTime, int occupancyBeforeStop, double stopDuration,
-                   DvrpVehicle vehicle) {
+                          double departureTime, int occupancyBeforeStop, double stopDuration,
+                          DvrpVehicle vehicle) {
         this.request = request;
         this.stopType = stopType;
         this.arrivalTime = arrivalTime;
@@ -138,5 +138,19 @@ public class TimetableEntry {
 
     public StopType getStopType() {
         return stopType;
+    }
+
+    @Override
+    public String toString() {
+        return "TimetableEntry{" +
+                "request=" + request.passengerId().toString() +
+                ", stopType=" + stopType +
+                ", arrivalTime=" + arrivalTime +
+                ", departureTime=" + departureTime +
+                ", occupancyBeforeStop=" + occupancyBeforeStop +
+                ", stopDuration=" + stopDuration +
+                ", capacity=" + capacity +
+                ", slackTime=" + slackTime +
+                '}';
     }
 }

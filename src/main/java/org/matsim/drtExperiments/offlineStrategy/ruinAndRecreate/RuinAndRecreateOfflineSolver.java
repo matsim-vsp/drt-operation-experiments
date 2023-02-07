@@ -1,8 +1,11 @@
 package org.matsim.drtExperiments.offlineStrategy.ruinAndRecreate;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
+import org.matsim.api.core.v01.population.Person;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.core.router.util.TravelTime;
@@ -15,16 +18,14 @@ import org.matsim.drtExperiments.offlineStrategy.LinkToLinkTravelTimeMatrix;
 import org.matsim.drtExperiments.offlineStrategy.OfflineSolver;
 import org.matsim.drtExperiments.offlineStrategy.OfflineSolverRegretHeuristic;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class RuinAndRecreateOfflineSolver implements OfflineSolver {
     private final int maxIterations;
     private final Network network;
     private final TravelTime travelTime;
     private final DrtConfigGroup drtConfigGroup;
+    private static final Logger log = LogManager.getLogger(RuinAndRecreateOfflineSolver.class);
 
     public RuinAndRecreateOfflineSolver(int maxIterations, Network network, TravelTime travelTime, DrtConfigGroup drtConfigGroup) {
         this.maxIterations = maxIterations;
@@ -37,6 +38,21 @@ public class RuinAndRecreateOfflineSolver implements OfflineSolver {
     public FleetSchedules calculate(FleetSchedules previousSchedules,
                                     Map<Id<DvrpVehicle>, OnlineVehicleInfo> onlineVehicleInfoMap, List<GeneralRequest> newRequests,
                                     double time) {
+        // Initialize fleet schedule when it is null
+        if (previousSchedules == null) {
+            Map<Id<DvrpVehicle>, List<TimetableEntry>> vehicleToTimetableMap = new HashMap<>();
+            for (OnlineVehicleInfo vehicleInfo : onlineVehicleInfoMap.values()) {
+                vehicleToTimetableMap.put(vehicleInfo.vehicle().getId(), new ArrayList<>());
+            }
+            Map<Id<Person>, Id<DvrpVehicle>> requestIdToVehicleMap = new HashMap<>();
+            Map<Id<Person>, GeneralRequest> rejectedRequests = new HashMap<>();
+            previousSchedules = new FleetSchedules(vehicleToTimetableMap, requestIdToVehicleMap, rejectedRequests);
+        }
+
+        if (newRequests.isEmpty()) {
+            return previousSchedules;
+        }
+
         // Initialize all the necessary objects
         RecreateSolutionAcceptor solutionAcceptor = new SimpleAnnealingThresholdAcceptor();
         RuinSelector ruinSelector = new RandomRuinSelector();
@@ -45,7 +61,7 @@ public class RuinAndRecreateOfflineSolver implements OfflineSolver {
         // Initialize regret inserter
         OfflineSolverRegretHeuristic regretInserter = new OfflineSolverRegretHeuristic(network, travelTime, drtConfigGroup);
         LinkToLinkTravelTimeMatrix linkToLinkTravelTimeMatrix = regretInserter.prepareLinkToLinkTravelMatrix(previousSchedules, onlineVehicleInfoMap, newRequests, time);
-        // TODO consider optimize this structure. prepare link to link travel time matrix may be moved to another place
+        // TODO consider optimize this structure. "prepare link to link travel time matrix" may be moved to another place
 
         // Update the schedule to the current situation (e.g., errors caused by those 1s differences; traffic situation...)
         updateFleetSchedule(previousSchedules, onlineVehicleInfoMap, linkToLinkTravelTimeMatrix);
@@ -65,20 +81,28 @@ public class RuinAndRecreateOfflineSolver implements OfflineSolver {
         FleetSchedules currentSolution = initialSolution;
         double currentScore = initialScore;
 
-        for (int i = 0; i < maxIterations; i++) {
+        int displayCounter = 1;
+        for (int i = 1; i < maxIterations + 1; i++) {
             // Create a copy of current solution
             FleetSchedules newSolution = currentSolution.copySchedule();
 
             // Ruin the plan by removing some requests from the schedule
             Set<GeneralRequest> requestsToRemove = ruinSelector.selectRequestsToBeRuined(newSolution);
+            if (requestsToRemove.size() <= 1) {
+                log.info("There is only 1 open requests to remove. It does not make sense to further iterate.");
+                break;
+            }
+
             for (GeneralRequest request : requestsToRemove) {
                 Id<DvrpVehicle> vehicleId = newSolution.requestIdToVehicleMap().get(request.passengerId());
                 insertionCalculator.removeRequestFromSchedule(onlineVehicleInfoMap.get(vehicleId), request, newSolution);
             }
 
             // Recreate: try to re-insert all the removed requests, along with rejected requests, back into the schedule
-            // TODO consider change the list to set in the input argument
-            regretInserter.performRegretInsertion(insertionCalculator, newSolution, onlineVehicleInfoMap, (List<GeneralRequest>) newSolution.rejectedRequests().values());
+            // TODO the value set of the map does not preserve the order -> potential different result each time
+            List<GeneralRequest> requestsToReinsert = new ArrayList<>(newSolution.rejectedRequests().values());
+            newSolution.rejectedRequests().clear();
+            newSolution = regretInserter.performRegretInsertion(insertionCalculator, newSolution, onlineVehicleInfoMap, requestsToReinsert);
 
             // Score the new solution
             double newScore = solutionCostCalculator.calculateSolutionCost(newSolution, time);
@@ -90,7 +114,14 @@ public class RuinAndRecreateOfflineSolver implements OfflineSolver {
                     currentBestSolution = newSolution;
                 }
             }
+
+            if (i % displayCounter == 0) {
+                log.info("Ruin and Recreate iterations #" + i + ": Current score = " + currentScore + ", newScore score = " + newScore + ", accepted = " + solutionAcceptor.acceptSolutionOrNot(newScore, currentScore, i, maxIterations) + ", current best score = " + currentBestScore);
+                displayCounter *= 2;
+            }
+
         }
+        log.info(maxIterations + " ruin and Recreate iterations complete!");
 
         return currentBestSolution;
     }

@@ -216,14 +216,17 @@ public class InsertionCalculator {
         // Update the timetable
         for (int i = 0; i < timetable.size(); i++) {
             TimetableEntry stop = timetable.get(i);
+            double departureTimeFromPreviousStop;
             double updatedArrivalTime;
             if (i == 0) {
-                updatedArrivalTime = linkToLinkTravelTimeMatrix.
-                        getTravelTime(vehicleInfo.currentLink(), network.getLinks().get(stop.getLinkId()), vehicleInfo.divertableTime());
+                departureTimeFromPreviousStop = vehicleInfo.divertableTime();
+                updatedArrivalTime = departureTimeFromPreviousStop + linkToLinkTravelTimeMatrix.
+                        getTravelTime(vehicleInfo.currentLink(), network.getLinks().get(stop.getLinkId()), departureTimeFromPreviousStop);
             } else {
                 TimetableEntry previousStop = timetable.get(i - 1);
-                updatedArrivalTime = linkToLinkTravelTimeMatrix.
-                        getTravelTime(network.getLinks().get(previousStop.getLinkId()), network.getLinks().get(stop.getLinkId()), previousStop.getDepartureTime());
+                departureTimeFromPreviousStop = previousStop.getDepartureTime();
+                updatedArrivalTime = departureTimeFromPreviousStop + linkToLinkTravelTimeMatrix.
+                        getTravelTime(network.getLinks().get(previousStop.getLinkId()), network.getLinks().get(stop.getLinkId()), departureTimeFromPreviousStop);
             }
             stop.updateArrivalTime(updatedArrivalTime);
         }
@@ -231,7 +234,6 @@ public class InsertionCalculator {
         // put the request in the rejection list
         previousSchedule.requestIdToVehicleMap().remove(requestToRemove.passengerId());
         previousSchedule.rejectedRequests().put(requestToRemove.passengerId(), requestToRemove);
-
     }
 
     // Nested classes / Records
