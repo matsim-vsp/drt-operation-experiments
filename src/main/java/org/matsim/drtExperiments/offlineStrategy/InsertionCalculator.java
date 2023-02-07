@@ -4,7 +4,6 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
-import org.matsim.core.router.util.TravelTime;
 import org.matsim.drtExperiments.basicStructures.FleetSchedules;
 import org.matsim.drtExperiments.basicStructures.GeneralRequest;
 import org.matsim.drtExperiments.basicStructures.OnlineVehicleInfo;
@@ -17,14 +16,12 @@ public class InsertionCalculator {
     final static double NOT_FEASIBLE_COST = 1e6;
 
     private final Network network;
-    private final TravelTime travelTime;
     private final double stopDuration;
     private final LinkToLinkTravelTimeMatrix linkToLinkTravelTimeMatrix;
 
-    public InsertionCalculator(Network network, TravelTime travelTime, double stopDuration,
+    public InsertionCalculator(Network network, double stopDuration,
                                LinkToLinkTravelTimeMatrix linkToLinkTravelTimeMatrix) {
         this.network = network;
-        this.travelTime = travelTime;
         this.stopDuration = stopDuration;
         this.linkToLinkTravelTimeMatrix = linkToLinkTravelTimeMatrix;
     }

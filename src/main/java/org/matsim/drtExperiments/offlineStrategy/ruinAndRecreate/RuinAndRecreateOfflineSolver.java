@@ -5,7 +5,6 @@ import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.api.core.v01.population.Person;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.core.router.util.TravelTime;
@@ -40,15 +39,10 @@ public class RuinAndRecreateOfflineSolver implements OfflineSolver {
                                     double time) {
         // Initialize fleet schedule when it is null
         if (previousSchedules == null) {
-            Map<Id<DvrpVehicle>, List<TimetableEntry>> vehicleToTimetableMap = new HashMap<>();
-            for (OnlineVehicleInfo vehicleInfo : onlineVehicleInfoMap.values()) {
-                vehicleToTimetableMap.put(vehicleInfo.vehicle().getId(), new ArrayList<>());
-            }
-            Map<Id<Person>, Id<DvrpVehicle>> requestIdToVehicleMap = new HashMap<>();
-            Map<Id<Person>, GeneralRequest> rejectedRequests = new HashMap<>();
-            previousSchedules = new FleetSchedules(vehicleToTimetableMap, requestIdToVehicleMap, rejectedRequests);
+            previousSchedules = FleetSchedules.initializeFleetSchedules(onlineVehicleInfoMap);
         }
 
+        // If there is no new request, simply keep the schedules unchanged
         if (newRequests.isEmpty()) {
             return previousSchedules;
         }
@@ -58,16 +52,18 @@ public class RuinAndRecreateOfflineSolver implements OfflineSolver {
         RuinSelector ruinSelector = new RandomRuinSelector();
         SolutionCostCalculator solutionCostCalculator = new DefaultSolutionCostCalculator();
 
-        // Initialize regret inserter
-        OfflineSolverRegretHeuristic regretInserter = new OfflineSolverRegretHeuristic(network, travelTime, drtConfigGroup);
-        LinkToLinkTravelTimeMatrix linkToLinkTravelTimeMatrix = regretInserter.prepareLinkToLinkTravelMatrix(previousSchedules, onlineVehicleInfoMap, newRequests, time);
-        // TODO consider optimize this structure. "prepare link to link travel time matrix" may be moved to another place
+        // Prepare link to link travel time matrix for relevant links
+        LinkToLinkTravelTimeMatrix linkToLinkTravelTimeMatrix = LinkToLinkTravelTimeMatrix.
+                prepareLinkToLinkTravelMatrix(network, travelTime, previousSchedules, onlineVehicleInfoMap, newRequests, time);
 
-        // Update the schedule to the current situation (e.g., errors caused by those 1s differences; traffic situation...)
-        updateFleetSchedule(previousSchedules, onlineVehicleInfoMap, linkToLinkTravelTimeMatrix);
+        // update schedules based on the latest travel time estimation and current locations
+        previousSchedules.updateFleetSchedule(network, linkToLinkTravelTimeMatrix, onlineVehicleInfoMap);
 
         // Create insertion calculator
-        InsertionCalculator insertionCalculator = new InsertionCalculator(network, travelTime, drtConfigGroup.stopDuration, linkToLinkTravelTimeMatrix);
+        InsertionCalculator insertionCalculator = new InsertionCalculator(network, drtConfigGroup.stopDuration, linkToLinkTravelTimeMatrix);
+
+        // Initialize regret inserter
+        OfflineSolverRegretHeuristic regretInserter = new OfflineSolverRegretHeuristic(network, travelTime, drtConfigGroup);
 
         // Calculate initial solution
         FleetSchedules initialSolution = regretInserter.performRegretInsertion(insertionCalculator, previousSchedules, onlineVehicleInfoMap, newRequests);
@@ -88,18 +84,16 @@ public class RuinAndRecreateOfflineSolver implements OfflineSolver {
 
             // Ruin the plan by removing some requests from the schedule
             Set<GeneralRequest> requestsToRemove = ruinSelector.selectRequestsToBeRuined(newSolution);
-            if (requestsToRemove.size() <= 1) {
-                log.info("There is only 1 open requests to remove. It does not make sense to further iterate.");
+            if (requestsToRemove.isEmpty()) {
+                log.info("There is no request to remove! All the following iterations will be skipped");
                 break;
             }
-
             for (GeneralRequest request : requestsToRemove) {
                 Id<DvrpVehicle> vehicleId = newSolution.requestIdToVehicleMap().get(request.passengerId());
                 insertionCalculator.removeRequestFromSchedule(onlineVehicleInfoMap.get(vehicleId), request, newSolution);
             }
 
             // Recreate: try to re-insert all the removed requests, along with rejected requests, back into the schedule
-            // TODO the value set of the map does not preserve the order -> potential different result each time
             List<GeneralRequest> requestsToReinsert = new ArrayList<>(newSolution.rejectedRequests().values());
             newSolution.rejectedRequests().clear();
             newSolution = regretInserter.performRegretInsertion(insertionCalculator, newSolution, onlineVehicleInfoMap, requestsToReinsert);
@@ -124,34 +118,5 @@ public class RuinAndRecreateOfflineSolver implements OfflineSolver {
         log.info(maxIterations + " ruin and Recreate iterations complete!");
 
         return currentBestSolution;
-    }
-
-
-    // TODO duplicated code from here, consider re-structure
-    private void updateFleetSchedule(FleetSchedules previousSchedules,
-                                     Map<Id<DvrpVehicle>, OnlineVehicleInfo> onlineVehicleInfoMap,
-                                     LinkToLinkTravelTimeMatrix linkToLinkTravelTimeMatrix) {
-        for (Id<DvrpVehicle> vehicleId : onlineVehicleInfoMap.keySet()) {
-            previousSchedules.vehicleToTimetableMap().computeIfAbsent(vehicleId, t -> new ArrayList<>()); // When new vehicle enters service, create a new entry for it
-            if (!onlineVehicleInfoMap.containsKey(vehicleId)) {
-                previousSchedules.vehicleToTimetableMap().remove(vehicleId); // When a vehicle ends service, remove it from the schedule
-            }
-        }
-
-        for (Id<DvrpVehicle> vehicleId : previousSchedules.vehicleToTimetableMap().keySet()) {
-            List<TimetableEntry> timetable = previousSchedules.vehicleToTimetableMap().get(vehicleId);
-            if (!timetable.isEmpty()) {
-                Link currentLink = onlineVehicleInfoMap.get(vehicleId).currentLink();
-                double currentTime = onlineVehicleInfoMap.get(vehicleId).divertableTime();
-                for (TimetableEntry timetableEntry : timetable) {
-                    Id<Link> stopLinkId = timetableEntry.getStopType() == TimetableEntry.StopType.PICKUP ? timetableEntry.getRequest().fromLinkId() : timetableEntry.getRequest().toLinkId();
-                    Link stopLink = network.getLinks().get(stopLinkId);
-                    double newArrivalTime = currentTime + linkToLinkTravelTimeMatrix.getTravelTime(currentLink, stopLink, currentTime);
-                    timetableEntry.updateArrivalTime(newArrivalTime);
-                    currentTime = timetableEntry.getDepartureTime();
-                    currentLink = stopLink;
-                }
-            }
-        }
     }
 }

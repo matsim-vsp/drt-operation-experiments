@@ -22,6 +22,7 @@ public class RandomRuinSelector implements RuinSelector {
         int numToRemoved = (int) (openRequests.size() * PROPORTION_TO_REMOVE) + 1;
         int maxRemoval = 1000;
         numToRemoved = Math.min(numToRemoved, maxRemoval);
+        numToRemoved = Math.min(numToRemoved, openRequests.size());
         Set<GeneralRequest> requestsToBeRuined = new HashSet<>();
         for (int i = 0; i < numToRemoved; i++) {
             requestsToBeRuined.add(openRequests.get(i));
