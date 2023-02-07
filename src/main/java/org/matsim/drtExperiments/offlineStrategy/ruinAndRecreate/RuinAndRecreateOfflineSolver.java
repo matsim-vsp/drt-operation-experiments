@@ -3,7 +3,6 @@ package org.matsim.drtExperiments.offlineStrategy.ruinAndRecreate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
@@ -11,7 +10,6 @@ import org.matsim.core.router.util.TravelTime;
 import org.matsim.drtExperiments.basicStructures.FleetSchedules;
 import org.matsim.drtExperiments.basicStructures.GeneralRequest;
 import org.matsim.drtExperiments.basicStructures.OnlineVehicleInfo;
-import org.matsim.drtExperiments.basicStructures.TimetableEntry;
 import org.matsim.drtExperiments.offlineStrategy.InsertionCalculator;
 import org.matsim.drtExperiments.offlineStrategy.LinkToLinkTravelTimeMatrix;
 import org.matsim.drtExperiments.offlineStrategy.OfflineSolver;
@@ -19,19 +17,9 @@ import org.matsim.drtExperiments.offlineStrategy.OfflineSolverRegretHeuristic;
 
 import java.util.*;
 
-public class RuinAndRecreateOfflineSolver implements OfflineSolver {
-    private final int maxIterations;
-    private final Network network;
-    private final TravelTime travelTime;
-    private final DrtConfigGroup drtConfigGroup;
+public record RuinAndRecreateOfflineSolver(int maxIterations, Network network, TravelTime travelTime,
+                                           DrtConfigGroup drtConfigGroup) implements OfflineSolver {
     private static final Logger log = LogManager.getLogger(RuinAndRecreateOfflineSolver.class);
-
-    public RuinAndRecreateOfflineSolver(int maxIterations, Network network, TravelTime travelTime, DrtConfigGroup drtConfigGroup) {
-        this.maxIterations = maxIterations;
-        this.network = network;
-        this.travelTime = travelTime;
-        this.drtConfigGroup = drtConfigGroup;
-    }
 
     @Override
     public FleetSchedules calculate(FleetSchedules previousSchedules,
