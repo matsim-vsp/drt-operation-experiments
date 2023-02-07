@@ -49,7 +49,7 @@ public class LinkToLinkTravelTimeMatrix {
         }
 
         // Requests locations
-        // open requests on timetable
+        // requests on the timetable
         for (List<TimetableEntry> timetable : previousSchedules.vehicleToTimetableMap().values()) {
             for (TimetableEntry timetableEntry : timetable) {
                 if (timetableEntry.getStopType() == TimetableEntry.StopType.PICKUP) {

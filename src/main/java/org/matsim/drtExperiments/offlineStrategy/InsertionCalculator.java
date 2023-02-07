@@ -12,19 +12,9 @@ import org.matsim.drtExperiments.basicStructures.TimetableEntry;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InsertionCalculator {
+public record InsertionCalculator(Network network, double stopDuration,
+                                  LinkToLinkTravelTimeMatrix linkToLinkTravelTimeMatrix) {
     final static double NOT_FEASIBLE_COST = 1e6;
-
-    private final Network network;
-    private final double stopDuration;
-    private final LinkToLinkTravelTimeMatrix linkToLinkTravelTimeMatrix;
-
-    public InsertionCalculator(Network network, double stopDuration,
-                               LinkToLinkTravelTimeMatrix linkToLinkTravelTimeMatrix) {
-        this.network = network;
-        this.stopDuration = stopDuration;
-        this.linkToLinkTravelTimeMatrix = linkToLinkTravelTimeMatrix;
-    }
 
     /**
      * Compute the cost to insert the request in to the vehicle.

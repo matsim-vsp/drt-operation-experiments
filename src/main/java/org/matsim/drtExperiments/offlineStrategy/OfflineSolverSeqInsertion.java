@@ -30,13 +30,7 @@ public class OfflineSolverSeqInsertion implements OfflineSolver {
                                     Map<Id<DvrpVehicle>, OnlineVehicleInfo> onlineVehicleInfoMap,
                                     List<GeneralRequest> newRequests, double time) {
         if (previousSchedules == null) {
-            Map<Id<DvrpVehicle>, List<TimetableEntry>> vehicleToTimetableMap = new HashMap<>();
-            for (OnlineVehicleInfo vehicleInfo : onlineVehicleInfoMap.values()) {
-                vehicleToTimetableMap.put(vehicleInfo.vehicle().getId(), new ArrayList<>());
-            }
-            Map<Id<Person>, Id<DvrpVehicle>> requestIdToVehicleMap = new HashMap<>();
-            Map<Id<Person>, GeneralRequest> rejectedRequests = new HashMap<>();
-            previousSchedules = new FleetSchedules(vehicleToTimetableMap, requestIdToVehicleMap, rejectedRequests);
+            previousSchedules = FleetSchedules.initializeFleetSchedules(onlineVehicleInfoMap);
         }
 
         if (newRequests.isEmpty()) {
@@ -44,31 +38,11 @@ public class OfflineSolverSeqInsertion implements OfflineSolver {
         }
 
         // Prepare link to link travel time matrix based on all relevant locations (links)
-        Set<Id<Link>> relevantLinks = new HashSet<>();
-        // Vehicle locations
-        for (OnlineVehicleInfo onlineVehicleInfo : onlineVehicleInfoMap.values()) {
-            relevantLinks.add(onlineVehicleInfo.currentLink().getId());
-        }
-        // Requests locations
-        // open requests on timetable
-        for (List<TimetableEntry> timetable : previousSchedules.vehicleToTimetableMap().values()) {
-            for (TimetableEntry timetableEntry : timetable) {
-                if (timetableEntry.getStopType() == TimetableEntry.StopType.PICKUP) {
-                    relevantLinks.add(timetableEntry.getRequest().fromLinkId());
-                } else {
-                    relevantLinks.add(timetableEntry.getRequest().toLinkId());
-                }
-            }
-        }
-        // new requests
-        for (GeneralRequest request : newRequests) {
-            relevantLinks.add(request.fromLinkId());
-            relevantLinks.add(request.toLinkId());
-        }
-        LinkToLinkTravelTimeMatrix linkToLinkTravelTimeMatrix = new LinkToLinkTravelTimeMatrix(network, travelTime, relevantLinks, time);
+        LinkToLinkTravelTimeMatrix linkToLinkTravelTimeMatrix = LinkToLinkTravelTimeMatrix.
+                prepareLinkToLinkTravelMatrix(network, travelTime, previousSchedules, onlineVehicleInfoMap, newRequests, time);
 
         // Update the schedule to the current situation (e.g., errors caused by those 1s differences; traffic situation...)
-        updateFleetSchedule(previousSchedules, onlineVehicleInfoMap, linkToLinkTravelTimeMatrix);
+        previousSchedules.updateFleetSchedule(network, linkToLinkTravelTimeMatrix, onlineVehicleInfoMap);
 
         // Perform insertion
         for (GeneralRequest request : newRequests) {
@@ -291,33 +265,6 @@ public class OfflineSolverSeqInsertion implements OfflineSolver {
             candidateTimetable.add(stopToInsert); // insert at the end
         }
         return candidateTimetable;
-    }
-
-    private void updateFleetSchedule(FleetSchedules previousSchedules,
-                                     Map<Id<DvrpVehicle>, OnlineVehicleInfo> onlineVehicleInfoMap,
-                                     LinkToLinkTravelTimeMatrix linkToLinkTravelTimeMatrix) {
-        for (Id<DvrpVehicle> vehicleId : onlineVehicleInfoMap.keySet()) {
-            previousSchedules.vehicleToTimetableMap().computeIfAbsent(vehicleId, t -> new ArrayList<>()); // When new vehicle enters service, create a new entry for it
-            if (!onlineVehicleInfoMap.containsKey(vehicleId)) {
-                previousSchedules.vehicleToTimetableMap().remove(vehicleId); // When a vehicle ends service, remove it from the schedule
-            }
-        }
-
-        for (Id<DvrpVehicle> vehicleId : previousSchedules.vehicleToTimetableMap().keySet()) {
-            List<TimetableEntry> timetable = previousSchedules.vehicleToTimetableMap().get(vehicleId);
-            if (!timetable.isEmpty()) {
-                Link currentLink = onlineVehicleInfoMap.get(vehicleId).currentLink();
-                double currentTime = onlineVehicleInfoMap.get(vehicleId).divertableTime();
-                for (TimetableEntry timetableEntry : timetable) {
-                    Id<Link> stopLinkId = timetableEntry.getStopType() == TimetableEntry.StopType.PICKUP ? timetableEntry.getRequest().fromLinkId() : timetableEntry.getRequest().toLinkId();
-                    Link stopLink = network.getLinks().get(stopLinkId);
-                    double newArrivalTime = currentTime + linkToLinkTravelTimeMatrix.getTravelTime(currentLink, stopLink, currentTime);
-                    timetableEntry.updateArrivalTime(newArrivalTime);
-                    currentTime = timetableEntry.getDepartureTime();
-                    currentLink = stopLink;
-                }
-            }
-        }
     }
 
 }
