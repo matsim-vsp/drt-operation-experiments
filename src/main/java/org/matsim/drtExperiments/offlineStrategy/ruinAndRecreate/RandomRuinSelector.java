@@ -12,7 +12,7 @@ public class RandomRuinSelector implements RuinSelector {
 
 
     @Override
-    public Set<GeneralRequest> selectRequestsToBeRuined(FleetSchedules fleetSchedules) {
+    public List<GeneralRequest> selectRequestsToBeRuined(FleetSchedules fleetSchedules) {
         List<GeneralRequest> openRequests = new ArrayList<>();
         for (List<TimetableEntry> timetable : fleetSchedules.vehicleToTimetableMap().values()) {
             timetable.stream().filter(s -> s.getStopType() == TimetableEntry.StopType.PICKUP).forEach(s -> openRequests.add(s.getRequest()));
@@ -23,7 +23,7 @@ public class RandomRuinSelector implements RuinSelector {
         int maxRemoval = 1000;
         numToRemoved = Math.min(numToRemoved, maxRemoval);
         numToRemoved = Math.min(numToRemoved, openRequests.size());
-        Set<GeneralRequest> requestsToBeRuined = new HashSet<>();
+        List<GeneralRequest> requestsToBeRuined = new ArrayList<>();
         for (int i = 0; i < numToRemoved; i++) {
             requestsToBeRuined.add(openRequests.get(i));
         }

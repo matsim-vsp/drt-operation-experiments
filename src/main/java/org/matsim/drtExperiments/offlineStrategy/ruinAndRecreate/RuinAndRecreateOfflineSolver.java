@@ -71,7 +71,7 @@ public record RuinAndRecreateOfflineSolver(int maxIterations, Network network, T
             FleetSchedules newSolution = currentSolution.copySchedule();
 
             // Ruin the plan by removing some requests from the schedule
-            Set<GeneralRequest> requestsToRemove = ruinSelector.selectRequestsToBeRuined(newSolution);
+            List<GeneralRequest> requestsToRemove = ruinSelector.selectRequestsToBeRuined(newSolution);
             if (requestsToRemove.isEmpty()) {
                 log.info("There is no request to remove! All the following iterations will be skipped");
                 break;

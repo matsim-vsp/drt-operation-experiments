@@ -32,18 +32,6 @@ public record FleetSchedules(
         return new FleetSchedules(vehicleToTimetableMap, requestIdToVehicleMap, rejectedRequests);
     }
 
-    public static void updateFleet(FleetSchedules fleetSchedules, Map<Id<DvrpVehicle>, OnlineVehicleInfo> onlineVehicleInfoMap) {
-        Set<Id<DvrpVehicle>> updatedFleet = onlineVehicleInfoMap.keySet();
-
-        // Only keep the vehicles that are still in service
-        fleetSchedules.vehicleToTimetableMap.keySet().retainAll(updatedFleet);
-
-        for (Id<DvrpVehicle> vehicleId : updatedFleet) {
-            // Add a new entry for each vehicle that newly enters service
-            fleetSchedules.vehicleToTimetableMap.computeIfAbsent(vehicleId, timetable -> new ArrayList<>());
-        }
-    }
-
     public FleetSchedules copySchedule() {
         Map<Id<DvrpVehicle>, List<TimetableEntry>> vehicleToTimetableMapCopy = new LinkedHashMap<>();
         for (Id<DvrpVehicle> vehicleId : this.vehicleToTimetableMap().keySet()) {
@@ -58,9 +46,11 @@ public record FleetSchedules(
     public void updateFleetSchedule(Network network, LinkToLinkTravelTimeMatrix linkToLinkTravelTimeMatrix,
                                     Map<Id<DvrpVehicle>, OnlineVehicleInfo> onlineVehicleInfoMap) {
         for (Id<DvrpVehicle> vehicleId : onlineVehicleInfoMap.keySet()) {
-            this.vehicleToTimetableMap().computeIfAbsent(vehicleId, t -> new ArrayList<>()); // When new vehicle enters service, create a new entry for it
+            // When new vehicle enters service, create a new entry for it
+            this.vehicleToTimetableMap().computeIfAbsent(vehicleId, t -> new ArrayList<>());
             if (!onlineVehicleInfoMap.containsKey(vehicleId)) {
-                this.vehicleToTimetableMap().remove(vehicleId); // When a vehicle ends service, remove it from the schedule
+                // When a vehicle ends service, remove it from the schedule
+                this.vehicleToTimetableMap().remove(vehicleId);
             }
         }
 

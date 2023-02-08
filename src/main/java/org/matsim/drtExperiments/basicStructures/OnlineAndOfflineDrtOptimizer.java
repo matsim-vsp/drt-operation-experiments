@@ -326,6 +326,7 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
                     .map(v -> vehicleEntryFactory.create(v, now))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toMap(e -> e.vehicle.getId(), e -> e))).join();
+
             for (VehicleEntry vehicleEntry : vehicleEntries.values()) {
                 Schedule schedule = vehicleEntry.vehicle.getSchedule();
                 Task currentTask = schedule.getCurrentTask();
