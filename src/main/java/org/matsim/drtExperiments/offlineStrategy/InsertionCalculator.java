@@ -21,8 +21,8 @@ public record InsertionCalculator(Network network, double stopDuration,
      */
     public InsertionData computeInsertionData(OnlineVehicleInfo vehicleInfo, GeneralRequest request,
                                               FleetSchedules previousSchedules) {
-        Link fromLink = network.getLinks().get(request.fromLinkId());
-        Link toLink = network.getLinks().get(request.toLinkId());
+        Link fromLink = network.getLinks().get(request.getFromLinkId());
+        Link toLink = network.getLinks().get(request.getToLinkId());
         Link currentLink = vehicleInfo.currentLink();
         double divertableTime = vehicleInfo.divertableTime();
         double serviceEndTime = vehicleInfo.vehicle().getServiceEndTime() - stopDuration; // the last stop must start on or before this time step
@@ -32,11 +32,11 @@ public record InsertionCalculator(Network network, double stopDuration,
         if (originalTimetable.isEmpty()) {
             double timeToPickup = linkToLinkTravelTimeMatrix.getTravelTime(currentLink, fromLink, divertableTime);
             double arrivalTimePickUp = divertableTime + timeToPickup;
-            if (arrivalTimePickUp > request.latestStartTime() || arrivalTimePickUp > serviceEndTime) {
+            if (arrivalTimePickUp > request.getLatestDepartureTime() || arrivalTimePickUp > serviceEndTime) {
                 return new InsertionData(null, NOT_FEASIBLE_COST, vehicleInfo);
             }
 
-            double departureTimePickUp = Math.max(request.earliestStartTime(), arrivalTimePickUp) + stopDuration;
+            double departureTimePickUp = Math.max(request.getEarliestDepartureTime(), arrivalTimePickUp) + stopDuration;
             double tripTravelTime = linkToLinkTravelTimeMatrix.getTravelTime(fromLink, toLink, departureTimePickUp);
             double arrivalTimeDropOff = departureTimePickUp + tripTravelTime;
             double totalInsertionCost = timeToPickup + tripTravelTime;
@@ -80,11 +80,11 @@ public record InsertionCalculator(Network network, double stopDuration,
                     detourA = linkToLinkTravelTimeMatrix.getTravelTime(linkOfStopBeforePickUpInsertion, fromLink, stopBeforePickUpInsertion.getDepartureTime());
                     arrivalTimePickUpStop = departureTimeOfStopBeforePickUpInsertion + detourA;
                 }
-                if (arrivalTimePickUpStop > request.latestStartTime() || arrivalTimePickUpStop > serviceEndTime) {
+                if (arrivalTimePickUpStop > request.getLatestDepartureTime() || arrivalTimePickUpStop > serviceEndTime) {
                     break;
                     // Vehicle can no longer reach the pickup location in time. No need to continue with this vehicle
                 }
-                double departureTimePickUpStop = Math.max(arrivalTimePickUpStop, request.earliestStartTime()) + stopDuration;
+                double departureTimePickUpStop = Math.max(arrivalTimePickUpStop, request.getEarliestDepartureTime()) + stopDuration;
                 TimetableEntry stopAfterPickUpInsertion = originalTimetable.get(i);
                 Link linkOfStopAfterPickUpInsertion = network.getLinks().get(stopAfterPickUpInsertion.getLinkId());
                 double detourB = linkToLinkTravelTimeMatrix.getTravelTime(fromLink, linkOfStopAfterPickUpInsertion, departureTimePickUpStop);
@@ -104,10 +104,10 @@ public record InsertionCalculator(Network network, double stopDuration,
                 double departureTimeOfStopBeforePickUpInsertion = stopBeforePickUpInsertion.getDepartureTime();
                 double travelTimeToPickUp = linkToLinkTravelTimeMatrix.getTravelTime(linkOfStopBeforePickUpInsertion, fromLink, departureTimeOfStopBeforePickUpInsertion);
                 double arrivalTimePickUpStop = travelTimeToPickUp + departureTimeOfStopBeforePickUpInsertion;
-                if (arrivalTimePickUpStop > request.latestStartTime() || arrivalTimePickUpStop > serviceEndTime) {
+                if (arrivalTimePickUpStop > request.getLatestDepartureTime() || arrivalTimePickUpStop > serviceEndTime) {
                     break;
                 }
-                double departureTimePickUpStop = Math.max(arrivalTimePickUpStop, request.earliestStartTime()) + stopDuration;
+                double departureTimePickUpStop = Math.max(arrivalTimePickUpStop, request.getEarliestDepartureTime()) + stopDuration;
                 pickUpInsertionCost = travelTimeToPickUp;
                 TimetableEntry pickupStopToInsert = new TimetableEntry(request, TimetableEntry.StopType.PICKUP,
                         arrivalTimePickUpStop, departureTimePickUpStop, 0, stopDuration, vehicleInfo.vehicle());
@@ -129,7 +129,7 @@ public record InsertionCalculator(Network network, double stopDuration,
                 if (j < temporaryTimetable.size()) { // Insert drop off between two stops
                     double detourC = linkToLinkTravelTimeMatrix.getTravelTime(linkOfStopBeforeDropOffInsertion, toLink, departureTimeOfStopBeforeDropOffInsertion);
                     double arrivalTimeDropOffStop = departureTimeOfStopBeforeDropOffInsertion + detourC;
-                    if (arrivalTimeDropOffStop > request.latestArrivalTime() || arrivalTimeDropOffStop > serviceEndTime) {
+                    if (arrivalTimeDropOffStop > request.getLatestArrivalTime() || arrivalTimeDropOffStop > serviceEndTime) {
                         break;
                     }
                     double departureTimeDropOffStop = arrivalTimeDropOffStop + stopDuration;
@@ -153,7 +153,7 @@ public record InsertionCalculator(Network network, double stopDuration,
                     // Append drop off at the end
                     double travelTimeToDropOffStop = linkToLinkTravelTimeMatrix.getTravelTime(linkOfStopBeforeDropOffInsertion, toLink, departureTimeOfStopBeforeDropOffInsertion);
                     double arrivalTimeDropOffStop = departureTimeOfStopBeforeDropOffInsertion + travelTimeToDropOffStop;
-                    if (arrivalTimeDropOffStop > request.latestArrivalTime() || arrivalTimeDropOffStop > serviceEndTime) {
+                    if (arrivalTimeDropOffStop > request.getLatestArrivalTime() || arrivalTimeDropOffStop > serviceEndTime) {
                         continue;
                     }
                     double totalInsertionCost = pickUpInsertionCost + travelTimeToDropOffStop;
@@ -172,7 +172,7 @@ public record InsertionCalculator(Network network, double stopDuration,
 
     public void removeRequestFromSchedule(OnlineVehicleInfo vehicleInfo, GeneralRequest requestToRemove,
                                           FleetSchedules previousSchedule) {
-        Id<DvrpVehicle> vehicleId = previousSchedule.requestIdToVehicleMap().get(requestToRemove.passengerId());
+        Id<DvrpVehicle> vehicleId = previousSchedule.requestIdToVehicleMap().get(requestToRemove.getPassengerId());
         List<TimetableEntry> timetable = previousSchedule.vehicleToTimetableMap().get(vehicleId);
 
         // remove the request from the timetable
@@ -181,7 +181,7 @@ public record InsertionCalculator(Network network, double stopDuration,
         int dropOffIdx = timetable.size();
         for (int i = 0; i < timetable.size(); i++) {
             TimetableEntry stop = timetable.get(i);
-            if (stop.getRequest().passengerId().toString().equals(requestToRemove.passengerId().toString())) {
+            if (stop.getRequest().getPassengerId().toString().equals(requestToRemove.getPassengerId().toString())) {
                 if (stop.getStopType() == TimetableEntry.StopType.PICKUP) {
                     pickUpIdx = i;
                 } else {
@@ -219,8 +219,8 @@ public record InsertionCalculator(Network network, double stopDuration,
         }
 
         // put the request in the rejection list
-        previousSchedule.requestIdToVehicleMap().remove(requestToRemove.passengerId());
-        previousSchedule.rejectedRequests().put(requestToRemove.passengerId(), requestToRemove);
+        previousSchedule.requestIdToVehicleMap().remove(requestToRemove.getPassengerId());
+        previousSchedule.rejectedRequests().put(requestToRemove.getPassengerId(), requestToRemove);
     }
 
     // Nested classes / Records

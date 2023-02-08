@@ -115,9 +115,9 @@ public class TimetableEntry {
 
     public Id<Link> getLinkId() {
         if (stopType == StopType.PICKUP) {
-            return request.fromLinkId();
+            return request.getFromLinkId();
         }
-        return request.toLinkId();
+        return request.getToLinkId();
     }
 
     public int getOccupancyBeforeStop() {
@@ -125,7 +125,7 @@ public class TimetableEntry {
     }
 
     public double getEarliestDepartureTime() {
-        return request.earliestStartTime();
+        return request.getEarliestDepartureTime();
     }
 
     public double getSlackTime() {
@@ -133,7 +133,7 @@ public class TimetableEntry {
     }
 
     public double getLatestArrivalTime() {
-        return stopType == StopType.PICKUP ? request.latestStartTime() : request.latestArrivalTime();
+        return stopType == StopType.PICKUP ? request.getLatestDepartureTime() : request.getLatestArrivalTime();
     }
 
     public StopType getStopType() {
@@ -143,7 +143,7 @@ public class TimetableEntry {
     @Override
     public String toString() {
         return "TimetableEntry{" +
-                "request=" + request.passengerId().toString() +
+                "request=" + request.getPassengerId().toString() +
                 ", stopType=" + stopType +
                 ", arrivalTime=" + arrivalTime +
                 ", departureTime=" + departureTime +

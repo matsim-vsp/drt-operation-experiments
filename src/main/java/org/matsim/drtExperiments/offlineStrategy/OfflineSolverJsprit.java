@@ -99,18 +99,18 @@ public class OfflineSolverJsprit implements OfflineSolver {
         // 2. Request
         var preplannedRequestByShipmentId = new HashMap<String, GeneralRequest>();
         Map<Id<DvrpVehicle>, List<GeneralRequest>> requestsOnboardEachVehicles = new HashMap<>();
-        newRequests.forEach(drtRequest -> collectLocationIfAbsent(network.getLinks().get(drtRequest.fromLinkId())));
-        newRequests.forEach(drtRequest -> collectLocationIfAbsent(network.getLinks().get(drtRequest.toLinkId())));
+        newRequests.forEach(drtRequest -> collectLocationIfAbsent(network.getLinks().get(drtRequest.getFromLinkId())));
+        newRequests.forEach(drtRequest -> collectLocationIfAbsent(network.getLinks().get(drtRequest.getToLinkId())));
 
         if (previousSchedules != null) {
             for (Id<DvrpVehicle> vehicleId : previousSchedules.vehicleToTimetableMap().keySet()) {
                 for (TimetableEntry stop : previousSchedules.vehicleToTimetableMap().get(vehicleId)) {
                     if (stop.getStopType() == TimetableEntry.StopType.PICKUP) {
-                        Id<Link> fromLinkId = stop.getRequest().fromLinkId();
-                        collectLocationIfAbsent(network.getLinks().get(fromLinkId));
+                        Id<Link> getFromLinkId = stop.getRequest().getFromLinkId();
+                        collectLocationIfAbsent(network.getLinks().get(getFromLinkId));
                     } else {
-                        Id<Link> toLinkId = stop.getRequest().toLinkId();
-                        collectLocationIfAbsent(network.getLinks().get(toLinkId));
+                        Id<Link> getToLinkId = stop.getRequest().getToLinkId();
+                        collectLocationIfAbsent(network.getLinks().get(getToLinkId));
                     }
                 }
             }
@@ -141,14 +141,14 @@ public class OfflineSolverJsprit implements OfflineSolver {
                     if (stop.getStopType() == TimetableEntry.StopType.PICKUP) {
                         // This is an already accepted request, we will record the updated the earliest "latest pick-up time" (i.e., due to delay, the latest pick-up time may need to be extended)
                         // We still need the drop-off information to generate the shipment
-                        stopLink = network.getLinks().get(request.fromLinkId());
+                        stopLink = network.getLinks().get(request.getFromLinkId());
                         double travelTime = vrpCosts.getTransportTime(collectLocationIfAbsent(currentLink), collectLocationIfAbsent(stopLink), currentTime, null, null);
                         currentTime += travelTime;
                         currentLink = stopLink;
                         requestPickUpTimeMap.put(request, currentTime);
                     } else {
                         // Now we have the drop-off information, we can generate special shipments for already accepted requests
-                        stopLink = network.getLinks().get(request.toLinkId());
+                        stopLink = network.getLinks().get(request.getToLinkId());
                         double travelTime = vrpCosts.getTransportTime(collectLocationIfAbsent(currentLink), collectLocationIfAbsent(stopLink), currentTime, null, null);
                         currentTime += travelTime;
                         currentLink = stopLink;
@@ -157,14 +157,14 @@ public class OfflineSolverJsprit implements OfflineSolver {
                         if (!requestPickUpTimeMap.containsKey(request)) {
                             // The request is already onboard
                             requestsOnboardThisVehicle.add(request);
-                            var shipmentId = request.passengerId().toString() + "_dummy_" + vehicleStartTime;
+                            var shipmentId = request.getPassengerId().toString() + "_dummy_" + vehicleStartTime;
                             var shipment = Shipment.Builder.newInstance(shipmentId).
                                     setPickupLocation(collectLocationIfAbsent(vehicleStartLink)).
-                                    setDeliveryLocation(collectLocationIfAbsent(network.getLinks().get(request.toLinkId()))).
+                                    setDeliveryLocation(collectLocationIfAbsent(network.getLinks().get(request.getToLinkId()))).
                                     setPickupTimeWindow(new TimeWindow(vehicleStartTime, vehicleStartTime)).
                                     setPickupServiceTime(0).
                                     setDeliveryServiceTime(drtCfg.stopDuration).
-                                    setDeliveryTimeWindow(new TimeWindow(vehicleStartTime, Math.max(request.latestArrivalTime(), earliestLatestDropOffTime))).
+                                    setDeliveryTimeWindow(new TimeWindow(vehicleStartTime, Math.max(request.getLatestArrivalTime(), earliestLatestDropOffTime))).
                                     addSizeDimension(0, 1).
                                     addRequiredSkill(vehicleId.toString()).
                                     setPriority(1).
@@ -177,14 +177,14 @@ public class OfflineSolverJsprit implements OfflineSolver {
                             // The request is waiting to be picked up: retrieve the earliestLatestPickUpTime
                             double earliestLatestPickUpTime = requestPickUpTimeMap.get(request);
 
-                            var shipmentId = request.passengerId().toString() + "_repeat_" + vehicleStartTime;
+                            var shipmentId = request.getPassengerId().toString() + "_repeat_" + vehicleStartTime;
                             var shipment = Shipment.Builder.newInstance(shipmentId).
-                                    setPickupLocation(collectLocationIfAbsent(network.getLinks().get(request.fromLinkId()))).
-                                    setDeliveryLocation(collectLocationIfAbsent(network.getLinks().get(request.toLinkId()))).
-                                    setPickupTimeWindow(new TimeWindow(request.earliestStartTime(), Math.max(request.latestStartTime(), earliestLatestPickUpTime))).
+                                    setPickupLocation(collectLocationIfAbsent(network.getLinks().get(request.getFromLinkId()))).
+                                    setDeliveryLocation(collectLocationIfAbsent(network.getLinks().get(request.getToLinkId()))).
+                                    setPickupTimeWindow(new TimeWindow(request.getEarliestDepartureTime(), Math.max(request.getLatestDepartureTime(), earliestLatestPickUpTime))).
                                     setPickupServiceTime(drtCfg.stopDuration).
                                     setDeliveryServiceTime(drtCfg.stopDuration).
-                                    setDeliveryTimeWindow(new TimeWindow(vehicleStartTime, Math.max(request.latestArrivalTime(), earliestLatestDropOffTime))).
+                                    setDeliveryTimeWindow(new TimeWindow(vehicleStartTime, Math.max(request.getLatestArrivalTime(), earliestLatestDropOffTime))).
                                     addSizeDimension(0, 1).
                                     setPriority(2).
                                     build();
@@ -203,12 +203,12 @@ public class OfflineSolverJsprit implements OfflineSolver {
 
         // 2.2 New requests
         for (GeneralRequest newRequest : newRequests) {
-            var shipmentId = newRequest.passengerId().toString();
+            var shipmentId = newRequest.getPassengerId().toString();
             var shipment = Shipment.Builder.newInstance(shipmentId).
-                    setPickupLocation(collectLocationIfAbsent(network.getLinks().get(newRequest.fromLinkId()))).
-                    setDeliveryLocation(collectLocationIfAbsent(network.getLinks().get(newRequest.toLinkId()))).
-                    setPickupTimeWindow(new TimeWindow(newRequest.earliestStartTime(), newRequest.latestStartTime())).
-                    setDeliveryTimeWindow(new TimeWindow(newRequest.earliestStartTime(), newRequest.latestArrivalTime())).
+                    setPickupLocation(collectLocationIfAbsent(network.getLinks().get(newRequest.getFromLinkId()))).
+                    setDeliveryLocation(collectLocationIfAbsent(network.getLinks().get(newRequest.getToLinkId()))).
+                    setPickupTimeWindow(new TimeWindow(newRequest.getEarliestDepartureTime(), newRequest.getLatestDepartureTime())).
+                    setDeliveryTimeWindow(new TimeWindow(newRequest.getEarliestDepartureTime(), newRequest.getLatestArrivalTime())).
                     setPickupServiceTime(drtCfg.stopDuration).
                     setDeliveryServiceTime(drtCfg.stopDuration).
                     addSizeDimension(0, 1).
@@ -265,7 +265,7 @@ public class OfflineSolverJsprit implements OfflineSolver {
 
         // Collect results
         Set<Id<Person>> personsOnboard = new HashSet<>();
-        requestsOnboardEachVehicles.values().forEach(l -> l.forEach(r -> personsOnboard.add(r.passengerId())));
+        requestsOnboardEachVehicles.values().forEach(l -> l.forEach(r -> personsOnboard.add(r.getPassengerId())));
 
         Map<Id<Person>, Id<DvrpVehicle>> assignedPassengerToVehicleMap = new HashMap<>();
         Map<Id<DvrpVehicle>, List<TimetableEntry>> vehicleToPreplannedStops = problem.getVehicles()
@@ -280,13 +280,13 @@ public class OfflineSolverJsprit implements OfflineSolver {
                 var preplannedRequest = preplannedRequestByShipmentId.get(((TourActivity.JobActivity) activity).getJob().getId());
                 boolean isPickup = activity instanceof PickupShipment;
                 if (isPickup) {
-                    if (!personsOnboard.contains(preplannedRequest.passengerId())) {
+                    if (!personsOnboard.contains(preplannedRequest.getPassengerId())) {
                         // Add pick up stop if passenger is not yet onboard
                         var preplannedStop = new TimetableEntry(preplannedRequest, TimetableEntry.StopType.PICKUP,
                                 activity.getArrTime(), activity.getEndTime(), occupancy, drtCfg.stopDuration, vehicle);
                         vehicleToPreplannedStops.get(vehicleId).add(preplannedStop);
                     }
-                    assignedPassengerToVehicleMap.put(preplannedRequest.passengerId(), vehicleId);
+                    assignedPassengerToVehicleMap.put(preplannedRequest.getPassengerId(), vehicleId);
                     occupancy++;
                 } else {
                     // Add drop off stop
@@ -301,7 +301,7 @@ public class OfflineSolverJsprit implements OfflineSolver {
         Map<Id<Person>, GeneralRequest> rejectedRequests = new HashMap<>();
         for (Job job : bestSolution.getUnassignedJobs()) {
             GeneralRequest rejectedRequest = preplannedRequestByShipmentId.get(job.getId());
-            rejectedRequests.put(rejectedRequest.passengerId(), rejectedRequest);
+            rejectedRequests.put(rejectedRequest.getPassengerId(), rejectedRequest);
         }
 
         if (previousSchedules != null) {

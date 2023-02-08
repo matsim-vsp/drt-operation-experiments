@@ -76,7 +76,7 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
     private double lastUpdateTimeOfFleetStatus;
 
     private FleetSchedules fleetSchedules;
-    Map<Id<DvrpVehicle>, OnlineVehicleInfo> realTimeVehicleInfoMap = new HashMap<>();
+    Map<Id<DvrpVehicle>, OnlineVehicleInfo> realTimeVehicleInfoMap = new LinkedHashMap<>();
 
     /**
      * This DRT optimizer handles both pre-booked requests and the spontaneous requests.
@@ -193,20 +193,20 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
                 VrpPathWithTravelData path = VrpPaths.calcAndCreatePath(currentLink, nextLink, currentTime, router,
                         travelTime);
                 schedule.addTask(taskFactory.createDriveTask(vehicle, path, DrtDriveTask.TYPE));
-            } else if (nextStop.getRequest().earliestStartTime() >= timer.getTimeOfDay()) {
+            } else if (nextStop.getRequest().getEarliestDepartureTime() >= timer.getTimeOfDay()) {
                 // We are at the stop location. But we are too early. --> Add a wait for stop task
                 // Currently assuming the mobsim time step is 1 s
                 schedule.addTask(new WaitForStopTask(currentTime,
-                        nextStop.getRequest().earliestStartTime() + 1, currentLink));
+                        nextStop.getRequest().getEarliestDepartureTime() + 1, currentLink));
             } else {
                 // We are ready for the stop task! --> Add stop task to the schedule
                 var stopTask = taskFactory.createStopTask(vehicle, currentTime, currentTime + stopDuration, currentLink);
                 if (nextStop.getStopType() == TimetableEntry.StopType.PICKUP) {
-                    var request = Preconditions.checkNotNull(openRequests.get(nextStop.getRequest().passengerId()),
+                    var request = Preconditions.checkNotNull(openRequests.get(nextStop.getRequest().getPassengerId()),
                             "Request (%s) has not been yet submitted", nextStop.getRequest());
                     stopTask.addPickupRequest(AcceptedDrtRequest.createFromOriginalRequest(request));
                 } else {
-                    var request = Preconditions.checkNotNull(openRequests.remove(nextStop.getRequest().passengerId()),
+                    var request = Preconditions.checkNotNull(openRequests.remove(nextStop.getRequest().getPassengerId()),
                             "Request (%s) has not been yet submitted", nextStop.getRequest());
                     stopTask.addDropoffRequest(AcceptedDrtRequest.createFromOriginalRequest(request));
                     fleetSchedules.requestIdToVehicleMap().remove(request.getPassengerId());

@@ -23,7 +23,7 @@ public record FleetSchedules(
     }
 
     public static FleetSchedules initializeFleetSchedules(Map<Id<DvrpVehicle>, OnlineVehicleInfo> onlineVehicleInfoMap) {
-        Map<Id<DvrpVehicle>, List<TimetableEntry>> vehicleToTimetableMap = new HashMap<>();
+        Map<Id<DvrpVehicle>, List<TimetableEntry>> vehicleToTimetableMap = new LinkedHashMap<>();
         for (OnlineVehicleInfo vehicleInfo : onlineVehicleInfoMap.values()) {
             vehicleToTimetableMap.put(vehicleInfo.vehicle().getId(), new ArrayList<>());
         }
@@ -45,7 +45,7 @@ public record FleetSchedules(
     }
 
     public FleetSchedules copySchedule() {
-        Map<Id<DvrpVehicle>, List<TimetableEntry>> vehicleToTimetableMapCopy = new HashMap<>();
+        Map<Id<DvrpVehicle>, List<TimetableEntry>> vehicleToTimetableMapCopy = new LinkedHashMap<>();
         for (Id<DvrpVehicle> vehicleId : this.vehicleToTimetableMap().keySet()) {
             vehicleToTimetableMapCopy.put(vehicleId, copyTimetable(this.vehicleToTimetableMap.get(vehicleId)));
         }
@@ -64,7 +64,6 @@ public record FleetSchedules(
             }
         }
 
-        // TODO update the latest arrival time of each stop (delay it when necessary)
         for (Id<DvrpVehicle> vehicleId : this.vehicleToTimetableMap().keySet()) {
             List<TimetableEntry> timetable = this.vehicleToTimetableMap().get(vehicleId);
             if (!timetable.isEmpty()) {
@@ -72,10 +71,20 @@ public record FleetSchedules(
                 double currentTime = onlineVehicleInfoMap.get(vehicleId).divertableTime();
                 for (TimetableEntry timetableEntry : timetable) {
                     Id<Link> stopLinkId = timetableEntry.getStopType() == TimetableEntry.StopType.PICKUP ?
-                            timetableEntry.getRequest().fromLinkId() : timetableEntry.getRequest().toLinkId();
+                            timetableEntry.getRequest().getFromLinkId() : timetableEntry.getRequest().getToLinkId();
                     Link stopLink = network.getLinks().get(stopLinkId);
                     double newArrivalTime = currentTime + linkToLinkTravelTimeMatrix.getTravelTime(currentLink, stopLink, currentTime);
                     timetableEntry.updateArrivalTime(newArrivalTime);
+
+                    // Delay the latest arrival time of the stop when necessary (e.g., due to traffic uncertainty), in order to make sure assigned requests will remain feasible
+                    if (timetableEntry.getStopType() == TimetableEntry.StopType.PICKUP) {
+                        double originalLatestDepartureTime = timetableEntry.getRequest().getLatestDepartureTime();
+                        timetableEntry.getRequest().setLatestDepartureTime(Math.max(originalLatestDepartureTime, newArrivalTime));
+                    } else {
+                        double originalLatestArrivalTime = timetableEntry.getRequest().getLatestArrivalTime();
+                        timetableEntry.getRequest().setLatestArrivalTime(Math.max(originalLatestArrivalTime, newArrivalTime));
+                    }
+
                     currentTime = timetableEntry.getDepartureTime();
                     currentLink = stopLink;
                 }

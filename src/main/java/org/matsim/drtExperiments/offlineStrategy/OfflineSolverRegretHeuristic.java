@@ -84,7 +84,7 @@ public class OfflineSolverRegretHeuristic implements OfflineSolver {
 
             if (bestInsertionData.cost() < InsertionCalculator.NOT_FEASIBLE_COST) {
                 // Formally insert the request to the timetable
-                previousSchedules.requestIdToVehicleMap().put(requestWithLargestRegret.passengerId(), bestInsertionData.vehicleInfo().vehicle().getId());
+                previousSchedules.requestIdToVehicleMap().put(requestWithLargestRegret.getPassengerId(), bestInsertionData.vehicleInfo().vehicle().getId());
                 previousSchedules.vehicleToTimetableMap().put(bestInsertionData.vehicleInfo().vehicle().getId(), bestInsertionData.candidateTimetable());
 
                 // Remove the request from the insertion matrix
@@ -97,7 +97,7 @@ public class OfflineSolverRegretHeuristic implements OfflineSolver {
                 }
             } else {
                 // The best insertion is already infeasible. Reject this request
-                previousSchedules.rejectedRequests().put(requestWithLargestRegret.passengerId(), requestWithLargestRegret);
+                previousSchedules.rejectedRequests().put(requestWithLargestRegret.getPassengerId(), requestWithLargestRegret);
                 // Remove the request from the insertion matrix
                 insertionMatrix.remove(requestWithLargestRegret);
             }

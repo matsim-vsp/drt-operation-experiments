@@ -77,7 +77,7 @@ public record RuinAndRecreateOfflineSolver(int maxIterations, Network network, T
                 break;
             }
             for (GeneralRequest request : requestsToRemove) {
-                Id<DvrpVehicle> vehicleId = newSolution.requestIdToVehicleMap().get(request.passengerId());
+                Id<DvrpVehicle> vehicleId = newSolution.requestIdToVehicleMap().get(request.getPassengerId());
                 insertionCalculator.removeRequestFromSchedule(onlineVehicleInfoMap.get(vehicleId), request, newSolution);
             }
 
@@ -98,7 +98,7 @@ public record RuinAndRecreateOfflineSolver(int maxIterations, Network network, T
             }
 
             if (i % displayCounter == 0) {
-                log.info("Ruin and Recreate iterations #" + i + ": Current score = " + currentScore + ", newScore score = " + newScore + ", accepted = " + solutionAcceptor.acceptSolutionOrNot(newScore, currentScore, i, maxIterations) + ", current best score = " + currentBestScore);
+                log.info("Ruin and Recreate iterations #" + i + ": new score = " + newScore + ", accepted = " + solutionAcceptor.acceptSolutionOrNot(newScore, currentScore, i, maxIterations) + ", current best score = " + currentBestScore);
                 displayCounter *= 2;
             }
 

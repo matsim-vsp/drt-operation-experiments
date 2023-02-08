@@ -53,16 +53,16 @@ public class LinkToLinkTravelTimeMatrix {
         for (List<TimetableEntry> timetable : previousSchedules.vehicleToTimetableMap().values()) {
             for (TimetableEntry timetableEntry : timetable) {
                 if (timetableEntry.getStopType() == TimetableEntry.StopType.PICKUP) {
-                    relevantLinks.add(timetableEntry.getRequest().fromLinkId());
+                    relevantLinks.add(timetableEntry.getRequest().getFromLinkId());
                 } else {
-                    relevantLinks.add(timetableEntry.getRequest().toLinkId());
+                    relevantLinks.add(timetableEntry.getRequest().getToLinkId());
                 }
             }
         }
         // new requests
         for (GeneralRequest request : newRequests) {
-            relevantLinks.add(request.fromLinkId());
-            relevantLinks.add(request.toLinkId());
+            relevantLinks.add(request.getFromLinkId());
+            relevantLinks.add(request.getToLinkId());
         }
 
         return new LinkToLinkTravelTimeMatrix(network, travelTime, relevantLinks, time);
@@ -84,7 +84,8 @@ public class LinkToLinkTravelTimeMatrix {
                 Link currentLink = onlineVehicleInfoMap.get(vehicleId).currentLink();
                 double currentTime = onlineVehicleInfoMap.get(vehicleId).divertableTime();
                 for (TimetableEntry timetableEntry : timetable) {
-                    Id<Link> stopLinkId = timetableEntry.getStopType() == TimetableEntry.StopType.PICKUP ? timetableEntry.getRequest().fromLinkId() : timetableEntry.getRequest().toLinkId();
+                    Id<Link> stopLinkId = timetableEntry.getStopType() == TimetableEntry.StopType.PICKUP ?
+                            timetableEntry.getRequest().getFromLinkId() : timetableEntry.getRequest().getToLinkId();
                     Link stopLink = network.getLinks().get(stopLinkId);
                     double newArrivalTime = currentTime + this.getTravelTime(currentLink, stopLink, currentTime);
                     timetableEntry.updateArrivalTime(newArrivalTime);
