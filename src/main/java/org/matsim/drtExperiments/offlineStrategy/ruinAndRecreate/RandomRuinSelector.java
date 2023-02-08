@@ -8,7 +8,7 @@ import java.util.*;
 
 public class RandomRuinSelector implements RuinSelector {
     private final Random random = new Random(1234);
-    private final static double PROPORTION_TO_REMOVE = 0.1;
+    private final static double PROPORTION_TO_REMOVE = 0.15;
 
 
     @Override
