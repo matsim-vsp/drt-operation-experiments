@@ -83,7 +83,8 @@ public class OnlineAndOfflineDrtOperationModule extends AbstractDvrpModeQSimModu
                             getter.getModal(Network.class), getter.getModal(TravelTime.class), drtConfigGroup)));
             case RUIN_AND_RECREATE -> bindModal(OfflineSolver.class).toProvider(modalProvider(
                     getter -> new RuinAndRecreateOfflineSolver(maxIteration,
-                            getter.getModal(Network.class), getter.getModal(TravelTime.class), drtConfigGroup)));
+                            getter.getModal(Network.class), getter.getModal(TravelTime.class), drtConfigGroup,
+                            new Random(seed))));
             default -> throw new RuntimeException("The solver is not implemented!");
         }
 
