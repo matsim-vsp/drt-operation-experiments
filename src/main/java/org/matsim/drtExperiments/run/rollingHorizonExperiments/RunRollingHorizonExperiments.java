@@ -48,6 +48,10 @@ public class RunRollingHorizonExperiments implements MATSimAppCommand {
     private String iterationsInput;
 
 
+    public static void main(String[] args) {
+        new RunRollingHorizonExperiments().execute(args);
+    }
+
     @Override
     public Integer call() throws Exception {
         if (!Files.exists(Path.of(rootDirectory))) {
