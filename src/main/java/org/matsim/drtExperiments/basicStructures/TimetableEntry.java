@@ -18,8 +18,8 @@ public class TimetableEntry {
     private double slackTime;
 
     public TimetableEntry(GeneralRequest request, StopType stopType, double arrivalTime,
-                   double departureTime, int occupancyBeforeStop, double stopDuration,
-                   DvrpVehicle vehicle) {
+                          double departureTime, int occupancyBeforeStop, double stopDuration,
+                          DvrpVehicle vehicle) {
         this.request = request;
         this.stopType = stopType;
         this.arrivalTime = arrivalTime;
@@ -52,11 +52,11 @@ public class TimetableEntry {
         return effectiveDelay;
     }
 
-    public void addPickupBeforeTheStop() {
+    public void increaseOccupancyByOne() {
         occupancyBeforeStop += 1;
     }
 
-    public void addDropOffBeforeTheStop() {
+    public void decreaseOccupancyByOne() {
         occupancyBeforeStop -= 1;
     }
 
@@ -115,9 +115,9 @@ public class TimetableEntry {
 
     public Id<Link> getLinkId() {
         if (stopType == StopType.PICKUP) {
-            return request.fromLinkId();
+            return request.getFromLinkId();
         }
-        return request.toLinkId();
+        return request.getToLinkId();
     }
 
     public int getOccupancyBeforeStop() {
@@ -125,7 +125,7 @@ public class TimetableEntry {
     }
 
     public double getEarliestDepartureTime() {
-        return request.earliestStartTime();
+        return request.getEarliestDepartureTime();
     }
 
     public double getSlackTime() {
@@ -133,10 +133,24 @@ public class TimetableEntry {
     }
 
     public double getLatestArrivalTime() {
-        return stopType == StopType.PICKUP ? request.latestStartTime() : request.latestArrivalTime();
+        return stopType == StopType.PICKUP ? request.getLatestDepartureTime() : request.getLatestArrivalTime();
     }
 
     public StopType getStopType() {
         return stopType;
+    }
+
+    @Override
+    public String toString() {
+        return "TimetableEntry{" +
+                "request=" + request.getPassengerId().toString() +
+                ", stopType=" + stopType +
+                ", arrivalTime=" + arrivalTime +
+                ", departureTime=" + departureTime +
+                ", occupancyBeforeStop=" + occupancyBeforeStop +
+                ", stopDuration=" + stopDuration +
+                ", capacity=" + capacity +
+                ", slackTime=" + slackTime +
+                '}';
     }
 }

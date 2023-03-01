@@ -253,7 +253,7 @@ public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
             for (int i = pickUpIdx + 1; i < temporaryTimetable.size(); i++) {
                 double effectiveDelay = temporaryTimetable.get(i).getEffectiveDelayIfStopIsDelayedBy(delay);
                 temporaryTimetable.get(i).delayTheStopBy(delay);
-                temporaryTimetable.get(i).addPickupBeforeTheStop();
+                temporaryTimetable.get(i).increaseOccupancyByOne();
                 delay = effectiveDelay; // Update the delay carry over to the next stop
             }
         } else {
@@ -275,7 +275,7 @@ public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
             for (int i = dropOffIdx + 1; i < candidateTimetable.size(); i++) {
                 double effectiveDelay = candidateTimetable.get(i).getEffectiveDelayIfStopIsDelayedBy(delay);
                 candidateTimetable.get(i).delayTheStopBy(delay);
-                candidateTimetable.get(i).addDropOffBeforeTheStop();
+                candidateTimetable.get(i).decreaseOccupancyByOne();
                 delay = effectiveDelay; // Update the delay carry over to the next stop
             }
         } else {

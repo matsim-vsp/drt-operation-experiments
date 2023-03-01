@@ -21,6 +21,7 @@ import org.matsim.drtExperiments.offlineStrategy.OfflineSolver;
 import org.matsim.drtExperiments.offlineStrategy.OfflineSolverJsprit;
 import org.matsim.drtExperiments.offlineStrategy.OfflineSolverRegretHeuristic;
 import org.matsim.drtExperiments.offlineStrategy.OfflineSolverSeqInsertion;
+import org.matsim.drtExperiments.offlineStrategy.ruinAndRecreate.RuinAndRecreateOfflineSolver;
 import org.matsim.drtExperiments.onlineStrategy.OnlineSolver;
 import org.matsim.drtExperiments.onlineStrategy.OnlineSolverBasicInsertionStrategy;
 
@@ -49,7 +50,7 @@ public class OnlineAndOfflineDrtOperationModule extends AbstractDvrpModeQSimModu
         this.offlineSolverType = type;
     }
 
-    public enum OfflineSolverType {JSPRIT, SEQ_INSERTION, REGRET_INSERTION}
+    public enum OfflineSolverType {JSPRIT, SEQ_INSERTION, REGRET_INSERTION, RUIN_AND_RECREATE}
 
     @Override
     protected void configureQSim() {
@@ -79,6 +80,9 @@ public class OnlineAndOfflineDrtOperationModule extends AbstractDvrpModeQSimModu
                             getter.getModal(Network.class), getter.getModal(TravelTime.class), drtConfigGroup)));
             case REGRET_INSERTION -> bindModal(OfflineSolver.class).toProvider(modalProvider(
                     getter -> new OfflineSolverRegretHeuristic(
+                            getter.getModal(Network.class), getter.getModal(TravelTime.class), drtConfigGroup)));
+            case RUIN_AND_RECREATE -> bindModal(OfflineSolver.class).toProvider(modalProvider(
+                    getter -> new RuinAndRecreateOfflineSolver(maxIteration,
                             getter.getModal(Network.class), getter.getModal(TravelTime.class), drtConfigGroup)));
             default -> throw new RuntimeException("The solver is not implemented!");
         }
