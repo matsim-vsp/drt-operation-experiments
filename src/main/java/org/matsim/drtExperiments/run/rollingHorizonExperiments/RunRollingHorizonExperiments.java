@@ -55,7 +55,7 @@ public class RunRollingHorizonExperiments implements MATSimAppCommand {
     @Override
     public Integer call() throws Exception {
         if (!Files.exists(Path.of(rootDirectory))) {
-            Files.createDirectory(Path.of(rootDirectory));
+            Files.createDirectories(Path.of(rootDirectory));
         }
 
         // Prepare the result writer
