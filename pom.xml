@@ -3,8 +3,8 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.matsim</groupId>
-	<artifactId>project-space</artifactId>
-	<version>master-SNAPSHOT</version>
+	<artifactId>drt-operation-study</artifactId>
+	<version>SNAPSHOT</version>
 
 	<name>My project space</name>
 	<description>A repository for pre-booking study project</description>

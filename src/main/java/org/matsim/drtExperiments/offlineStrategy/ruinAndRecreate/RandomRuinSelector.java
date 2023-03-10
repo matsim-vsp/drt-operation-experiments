@@ -7,9 +7,12 @@ import org.matsim.drtExperiments.basicStructures.TimetableEntry;
 import java.util.*;
 
 public class RandomRuinSelector implements RuinSelector {
-    private final Random random = new Random(1234);
-    private final static double PROPORTION_TO_REMOVE = 0.15;
+    private final Random random;
+    private final static double PROPORTION_TO_REMOVE = 0.3;
 
+    public RandomRuinSelector(Random random) {
+        this.random = random;
+    }
 
     @Override
     public List<GeneralRequest> selectRequestsToBeRuined(FleetSchedules fleetSchedules) {

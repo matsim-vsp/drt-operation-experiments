@@ -43,6 +43,9 @@ public class RunDrtWithPrebooking implements MATSimAppCommand {
     @CommandLine.Option(names = "--iterations", description = "number of iterations for iterative offline solver", defaultValue = "0")
     private int iterations;
 
+    @CommandLine.Option(names = "--seed", description = "random seed", defaultValue = "0")
+    private int seed;
+
     public static void main(String[] args) {
         new RunDrtWithPrebooking().execute(args);
     }
@@ -68,7 +71,7 @@ public class RunDrtWithPrebooking implements MATSimAppCommand {
         // Install the new DRT optimizer and the linear stop duration
         for (DrtConfigGroup drtCfg : multiModeDrtConfig.getModalElements()) {
             controler.addOverridingQSimModule(new OnlineAndOfflineDrtOperationModule(prebookedPlans, drtCfg,
-                    horizon, interval, iterations, false, 0, offlineSolver));
+                    horizon, interval, iterations, false, seed, offlineSolver));
             controler.addOverridingModule(new LinearStopDurationModule(drtCfg));
         }
         controler.run();

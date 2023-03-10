@@ -5,7 +5,7 @@ public class SimpleAnnealingThresholdAcceptor implements RecreateSolutionAccepto
     @Override
     public boolean acceptSolutionOrNot(double currentScore, double previousScore, int currentIteration, int totalIterations) {
         // Parameters for the annealing acceptor
-        double initialThreshold = 0.25;
+        double initialThreshold = 0.5;
         double halfLife = 0.1;
 
         double x = (double) currentIteration / (double) totalIterations;
