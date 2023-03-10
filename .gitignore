@@ -32,3 +32,6 @@ hs_err_pid*
 
 # "local run" related file and folders
 /scenarios/output
+
+#target folder
+/target
