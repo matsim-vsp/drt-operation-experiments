@@ -18,7 +18,7 @@ import org.matsim.drtExperiments.offlineStrategy.OfflineSolverRegretHeuristic;
 import java.util.*;
 
 public record RuinAndRecreateOfflineSolver(int maxIterations, Network network, TravelTime travelTime,
-                                           DrtConfigGroup drtConfigGroup) implements OfflineSolver {
+                                           DrtConfigGroup drtConfigGroup, Random random) implements OfflineSolver {
     private static final Logger log = LogManager.getLogger(RuinAndRecreateOfflineSolver.class);
 
     @Override
@@ -37,7 +37,7 @@ public record RuinAndRecreateOfflineSolver(int maxIterations, Network network, T
 
         // Initialize all the necessary objects
         RecreateSolutionAcceptor solutionAcceptor = new SimpleAnnealingThresholdAcceptor();
-        RuinSelector ruinSelector = new RandomRuinSelector();
+        RuinSelector ruinSelector = new RandomRuinSelector(random);
         SolutionCostCalculator solutionCostCalculator = new DefaultSolutionCostCalculator();
 
         // Prepare link to link travel time matrix for relevant links
