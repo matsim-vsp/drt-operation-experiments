@@ -97,7 +97,7 @@ public class OfflineSolverRegretHeuristic implements OfflineSolver {
                 }
             } else {
                 // The best insertion is already infeasible. Reject this request
-                previousSchedules.rejectedRequests().put(requestWithLargestRegret.getPassengerId(), requestWithLargestRegret);
+                previousSchedules.pendingRequests().put(requestWithLargestRegret.getPassengerId(), requestWithLargestRegret);
                 // Remove the request from the insertion matrix
                 insertionMatrix.remove(requestWithLargestRegret);
             }

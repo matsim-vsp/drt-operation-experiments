@@ -8,12 +8,16 @@ import org.matsim.contrib.drt.extension.preplanned.run.PreplannedDrtControlerCre
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.drt.run.MultiModeDrtConfigGroup;
 import org.matsim.contrib.dvrp.benchmark.DvrpBenchmarkTravelTimeModule;
+import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
 import org.matsim.contrib.dvrp.run.DvrpConfigGroup;
 import org.matsim.contrib.dvrp.run.DvrpModule;
+import org.matsim.contrib.zone.skims.TravelTimeMatrix;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.population.PopulationUtils;
+import org.matsim.drtExperiments.onlineStrategy.DummyTravelTimeMatrix;
+import org.matsim.drtExperiments.run.modules.BypassTravelTimeMatrixModule;
 import org.matsim.drtExperiments.run.modules.LinearStopDurationModule;
 import org.matsim.drtExperiments.run.modules.OnlineAndOfflineDrtOperationModule;
 import org.matsim.drtExperiments.utils.DrtPerformanceQuantification;
@@ -73,6 +77,10 @@ public class RunDrtWithPrebooking implements MATSimAppCommand {
             controler.addOverridingQSimModule(new OnlineAndOfflineDrtOperationModule(prebookedPlans, drtCfg,
                     horizon, interval, iterations, false, seed, offlineSolver));
             controler.addOverridingModule(new LinearStopDurationModule(drtCfg));
+            // If we are doing fully offline optimization, then no need to generate the standard travel time matrix
+            if (prebookedPlansFile.equals("all")) {
+                controler.addOverridingQSimModule(new BypassTravelTimeMatrixModule(drtCfg));
+            }
         }
         controler.run();
 

@@ -63,7 +63,7 @@ public class OfflineSolverSeqInsertion implements OfflineSolver {
             }
 
             if (selectedVehicleId == null) {
-                previousSchedules.rejectedRequests().put(request.getPassengerId(), request);
+                previousSchedules.pendingRequests().put(request.getPassengerId(), request);
             } else {
                 previousSchedules.vehicleToTimetableMap().put(selectedVehicleId, updatedTimetable);
                 previousSchedules.requestIdToVehicleMap().put(request.getPassengerId(), selectedVehicleId);

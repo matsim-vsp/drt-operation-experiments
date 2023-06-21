@@ -22,6 +22,6 @@ public class DefaultSolutionCostCalculator implements SolutionCostCalculator {
                 departureTime = stop.getDepartureTime();
             }
         }
-        return totalDrivingTime + REJECTION_COST * fleetSchedules.rejectedRequests().size();
+        return totalDrivingTime + REJECTION_COST * fleetSchedules.pendingRequests().size();
     }
 }

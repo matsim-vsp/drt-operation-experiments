@@ -123,16 +123,16 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
         openRequests.put(((DrtRequest) request).getPassengerId(), drtRequest);
 
         if (fleetSchedules.requestIdToVehicleMap().containsKey(passengerId)
-                || fleetSchedules.rejectedRequests().containsKey(passengerId)) {
+                || fleetSchedules.pendingRequests().containsKey(passengerId)) {
             // This is a pre-booked request
             Id<DvrpVehicle> vehicleId = fleetSchedules.requestIdToVehicleMap().get(passengerId);
             if (vehicleId == null) {
-                Preconditions.checkState(fleetSchedules.rejectedRequests().containsKey(passengerId),
+                Preconditions.checkState(fleetSchedules.pendingRequests().containsKey(passengerId),
                         "Pre-planned request (%s) not assigned to any vehicle and not marked as unassigned.",
                         passengerId);
                 eventsManager.processEvent(new PassengerRequestRejectedEvent(timer.getTimeOfDay(), mode, request.getId(),
                         passengerId, "Marked as unassigned"));
-                fleetSchedules.rejectedRequests().remove(passengerId);
+                fleetSchedules.pendingRequests().remove(passengerId);
                 return;
             }
 
