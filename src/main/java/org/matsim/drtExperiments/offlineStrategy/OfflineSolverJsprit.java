@@ -305,7 +305,7 @@ public class OfflineSolverJsprit implements OfflineSolver {
         }
 
         if (previousSchedules != null) {
-            rejectedRequests.putAll(previousSchedules.rejectedRequests());
+            rejectedRequests.putAll(previousSchedules.pendingRequests());
             // Previously rejected requests whose "departure time" is not yet reached (i.e., not yet formally rejected in the DRT system)
         }
 

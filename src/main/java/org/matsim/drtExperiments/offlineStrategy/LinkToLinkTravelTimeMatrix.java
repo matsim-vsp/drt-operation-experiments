@@ -59,8 +59,15 @@ public class LinkToLinkTravelTimeMatrix {
                 }
             }
         }
+
         // new requests
         for (GeneralRequest request : newRequests) {
+            relevantLinks.add(request.getFromLinkId());
+            relevantLinks.add(request.getToLinkId());
+        }
+
+        // Pending rejected requests (i.e., not yet properly inserted and not yet formally rejected)
+        for (GeneralRequest request : previousSchedules.pendingRequests().values()) {
             relevantLinks.add(request.getFromLinkId());
             relevantLinks.add(request.getToLinkId());
         }

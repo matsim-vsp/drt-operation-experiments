@@ -220,7 +220,7 @@ public record InsertionCalculator(Network network, double stopDuration,
 
         // put the request in the rejection list
         previousSchedule.requestIdToVehicleMap().remove(requestToRemove.getPassengerId());
-        previousSchedule.rejectedRequests().put(requestToRemove.getPassengerId(), requestToRemove);
+        previousSchedule.pendingRequests().put(requestToRemove.getPassengerId(), requestToRemove);
     }
 
     // Nested classes / Records

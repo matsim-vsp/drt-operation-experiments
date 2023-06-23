@@ -82,8 +82,8 @@ public record RuinAndRecreateOfflineSolver(int maxIterations, Network network, T
             }
 
             // Recreate: try to re-insert all the removed requests, along with rejected requests, back into the schedule
-            List<GeneralRequest> requestsToReinsert = new ArrayList<>(newSolution.rejectedRequests().values());
-            newSolution.rejectedRequests().clear();
+            List<GeneralRequest> requestsToReinsert = new ArrayList<>(newSolution.pendingRequests().values());
+            newSolution.pendingRequests().clear();
             newSolution = regretInserter.performRegretInsertion(insertionCalculator, newSolution, onlineVehicleInfoMap, requestsToReinsert);
 
             // Score the new solution

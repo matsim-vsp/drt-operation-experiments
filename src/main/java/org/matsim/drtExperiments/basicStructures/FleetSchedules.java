@@ -12,7 +12,7 @@ import java.util.*;
 public record FleetSchedules(
         Map<Id<DvrpVehicle>, List<TimetableEntry>> vehicleToTimetableMap,
         Map<Id<Person>, Id<DvrpVehicle>> requestIdToVehicleMap,
-        Map<Id<Person>, GeneralRequest> rejectedRequests) {
+        Map<Id<Person>, GeneralRequest> pendingRequests) {
 
     public static List<TimetableEntry> copyTimetable(List<TimetableEntry> timetable) {
         List<TimetableEntry> timetableCopy = new ArrayList<>();
@@ -38,7 +38,7 @@ public record FleetSchedules(
             vehicleToTimetableMapCopy.put(vehicleId, copyTimetable(this.vehicleToTimetableMap.get(vehicleId)));
         }
         Map<Id<Person>, Id<DvrpVehicle>> requestIdToVehicleMapCopy = new HashMap<>(this.requestIdToVehicleMap);
-        Map<Id<Person>, GeneralRequest> rejectedRequestsCopy = new LinkedHashMap<>(this.rejectedRequests);
+        Map<Id<Person>, GeneralRequest> rejectedRequestsCopy = new LinkedHashMap<>(this.pendingRequests);
 
         return new FleetSchedules(vehicleToTimetableMapCopy, requestIdToVehicleMapCopy, rejectedRequestsCopy);
     }
