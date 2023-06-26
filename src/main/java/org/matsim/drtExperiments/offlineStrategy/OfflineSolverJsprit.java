@@ -226,6 +226,8 @@ public class OfflineSolverJsprit implements OfflineSolver {
         if (options.multiThread) {
             numOfThreads = Runtime.getRuntime().availableProcessors() + "";
         }
+
+        VehicleRoutingProblemSolution initialSolution = null;
         if (previousSchedules != null) {
             for (Id<DvrpVehicle> vehicleId : previousSchedules.vehicleToTimetableMap().keySet()) {
                 // Now we need to create the initial solution for this vehicle for the VRP problem
@@ -249,9 +251,10 @@ public class OfflineSolverJsprit implements OfflineSolver {
                 VehicleRoute iniRoute = initialRouteBuilder.build();
                 routesForInitialSolutions.add(iniRoute);
             }
+
+            initialSolution = new VehicleRoutingProblemSolution(routesForInitialSolutions, unassignedShipments, 0);
+            initialSolution.setCost(new DefaultRollingHorizonObjectiveFunction(problem).getCosts(initialSolution));
         }
-        VehicleRoutingProblemSolution initialSolution = new VehicleRoutingProblemSolution(routesForInitialSolutions, unassignedShipments, 0);
-        initialSolution.setCost(new DefaultRollingHorizonObjectiveFunction(problem).getCosts(initialSolution));
 
         var algorithm = Jsprit.Builder.newInstance(problem)
                 .setProperty(Jsprit.Parameter.THREADS, numOfThreads)
@@ -259,7 +262,9 @@ public class OfflineSolverJsprit implements OfflineSolver {
                 .setRandom(options.random)
                 .buildAlgorithm();
         algorithm.setMaxIterations(options.maxIterations);
-        algorithm.addInitialSolution(initialSolution);
+        if (previousSchedules != null) {
+            algorithm.addInitialSolution(initialSolution);
+        }
         var solutions = algorithm.searchSolutions();
         var bestSolution = Solutions.bestOf(solutions);
 

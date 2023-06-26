@@ -14,6 +14,7 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.population.PopulationUtils;
+import org.matsim.drtExperiments.run.modules.BypassTravelTimeMatrixModule;
 import org.matsim.drtExperiments.run.modules.LinearStopDurationModule;
 import org.matsim.drtExperiments.run.modules.OnlineAndOfflineDrtOperationModule;
 import org.matsim.drtExperiments.utils.DrtPerformanceQuantification;
@@ -21,6 +22,7 @@ import picocli.CommandLine;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 public class RunRollingHorizonExperiments implements MATSimAppCommand {
     @CommandLine.Option(names = "--config", description = "path to config file", required = true)
@@ -38,14 +40,15 @@ public class RunRollingHorizonExperiments implements MATSimAppCommand {
     @CommandLine.Option(names = "--seed", description = "random seed", defaultValue = "0")
     private int seed;
 
-    @CommandLine.Option(names = "--horizon", description = "horizons length of the solver", defaultValue = "1800")
-    private String horizonsInput;
+    @CommandLine.Option(names = "--horizon", description = "horizons length of the solver", arity = "1..*", defaultValue = "1800")
+    private List<String> horizonsInput;
 
-    @CommandLine.Option(names = "--interval", description = "re-planning interval", defaultValue = "1800")
-    private String intervalsInput;
+    @CommandLine.Option(names = "--interval", description = "re-planning interval", arity = "1..*", defaultValue = "1800")
+    private List<String> intervalsInput;
 
-    @CommandLine.Option(names = "--iterations", description = "number of iterations for iterative offline solver", defaultValue = "0")
-    private String iterationsInput;
+    @CommandLine.Option(names = "--iterations", description = "number of iterations for iterative offline solver. " +
+            "Separate with empty space", arity = "1..*", defaultValue = "0")
+    private List<String> iterationsInput;
 
 
     public static void main(String[] args) {
@@ -63,13 +66,9 @@ public class RunRollingHorizonExperiments implements MATSimAppCommand {
         resultsQuantification.writeTitleForRollingHorizon(Path.of(rootDirectory));
 
         // Run simulations
-        String[] horizonsArray = horizonsInput.split(",");
-        String[] intervalsArray = intervalsInput.split(",");
-        String[] iterationsArray = iterationsInput.split(",");
-
-        for (String iterationsString : iterationsArray) {
-            for (String horizonString : horizonsArray) {
-                for (String intervalString : intervalsArray) {
+        for (String iterationsString : iterationsInput) {
+            for (String horizonString : horizonsInput) {
+                for (String intervalString : intervalsInput) {
                     int iterations = Integer.parseInt(iterationsString);
                     double horizon = Double.parseDouble(horizonString);
                     double interval = Double.parseDouble(intervalString);
@@ -99,6 +98,10 @@ public class RunRollingHorizonExperiments implements MATSimAppCommand {
                         controler.addOverridingQSimModule(new OnlineAndOfflineDrtOperationModule(prebookedPlans, drtCfg,
                                 horizon, interval, iterations, false, seed, offlineSolver));
                         controler.addOverridingModule(new LinearStopDurationModule(drtCfg));
+                        // If we are doing fully offline optimization, then no need to generate the standard travel time matrix
+                        if (prebookedPlansFile.equals("all")) {
+                            controler.addOverridingQSimModule(new BypassTravelTimeMatrixModule(drtCfg));
+                        }
                     }
                     controler.run();
 
