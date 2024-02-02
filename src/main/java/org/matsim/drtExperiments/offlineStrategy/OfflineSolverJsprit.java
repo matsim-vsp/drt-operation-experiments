@@ -397,8 +397,9 @@ public class OfflineSolverJsprit implements OfflineSolver {
                 .collect(toMap(n -> n, node -> new Zone(Id.create(node.getId(), Zone.class), "node", node.getCoord()),
                         (zone1, zone2) -> zone1));
         var nodeByZone = EntryStream.of(zoneByNode).invert().toMap();
-        Matrix nodeToNodeMatrix = TravelTimeMatrices.calculateTravelTimeMatrix(network, nodeByZone, time, travelTime,
-                travelDisutility, Runtime.getRuntime().availableProcessors());
+        TravelTimeMatrices.RoutingParams params = new TravelTimeMatrices.RoutingParams(network, travelTime,
+                new TimeAsTravelDisutility(travelTime), Runtime.getRuntime().availableProcessors());
+        Matrix nodeToNodeMatrix = TravelTimeMatrices.calculateTravelTimeMatrix(params, nodeByZone, time);
 
         return (fromNode, toNode, departureTime) -> nodeToNodeMatrix.get(zoneByNode.get(fromNode), zoneByNode.get(toNode));
     }

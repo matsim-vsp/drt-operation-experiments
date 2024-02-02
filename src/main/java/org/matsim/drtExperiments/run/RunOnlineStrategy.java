@@ -14,7 +14,7 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.population.PopulationUtils;
-import org.matsim.drtExperiments.run.modules.LinearStopDurationModule;
+import org.matsim.drtExperiments.run.modules.SimpleCumulativeStopDurationModule;
 import org.matsim.drtExperiments.run.modules.OnlineAndOfflineDrtOperationModule;
 import org.matsim.drtExperiments.utils.DrtPerformanceQuantification;
 import picocli.CommandLine;
@@ -43,7 +43,7 @@ public class RunOnlineStrategy implements MATSimAppCommand {
 
         Config config = ConfigUtils.loadConfig(configPath, new MultiModeDrtConfigGroup(), new DvrpConfigGroup());
         MultiModeDrtConfigGroup multiModeDrtConfig = MultiModeDrtConfigGroup.get(config);
-        config.controler().setOutputDirectory(outputDirectory);
+        config.controller().setOutputDirectory(outputDirectory);
         Controler controler = PreplannedDrtControlerCreator.createControler(config, false);
         controler.addOverridingModule(new DvrpModule(new DvrpBenchmarkTravelTimeModule()));
 
@@ -52,7 +52,7 @@ public class RunOnlineStrategy implements MATSimAppCommand {
         for (DrtConfigGroup drtCfg : multiModeDrtConfig.getModalElements()) {
             controler.addOverridingQSimModule(new OnlineAndOfflineDrtOperationModule(prebookedPlans, drtCfg,
                     86400, 86400, 0, false, 0, OnlineAndOfflineDrtOperationModule.OfflineSolverType.SEQ_INSERTION));
-            controler.addOverridingModule(new LinearStopDurationModule(drtCfg));
+            controler.addOverridingModule(new SimpleCumulativeStopDurationModule(drtCfg));
         }
         controler.run();
 

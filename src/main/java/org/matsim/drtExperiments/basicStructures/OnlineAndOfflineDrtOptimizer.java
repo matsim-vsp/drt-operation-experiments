@@ -119,8 +119,8 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
         assert timer.getTimeOfDay() != 0 : "Currently, we cannot deal with request submitted at t = 0. Please remove such requests!";
 
         DrtRequest drtRequest = (DrtRequest) request;
-        Id<Person> passengerId = drtRequest.getPassengerId();
-        openRequests.put(((DrtRequest) request).getPassengerId(), drtRequest);
+        Id<Person> passengerId = drtRequest.getPassengerIds().get(0);
+        openRequests.put(((DrtRequest) request).getPassengerIds().get(0), drtRequest);
 
         if (fleetSchedules.requestIdToVehicleMap().containsKey(passengerId)
                 || fleetSchedules.pendingRequests().containsKey(passengerId)) {
@@ -131,14 +131,14 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
                         "Pre-planned request (%s) not assigned to any vehicle and not marked as unassigned.",
                         passengerId);
                 eventsManager.processEvent(new PassengerRequestRejectedEvent(timer.getTimeOfDay(), mode, request.getId(),
-                        passengerId, "Marked as unassigned"));
+                        Collections.singletonList(passengerId), "Marked as unassigned"));
                 fleetSchedules.pendingRequests().remove(passengerId);
                 return;
             }
 
             eventsManager.processEvent(
                     new PassengerRequestScheduledEvent(timer.getTimeOfDay(), drtRequest.getMode(), drtRequest.getId(),
-                            drtRequest.getPassengerId(), vehicleId, Double.NaN, Double.NaN));
+                            drtRequest.getPassengerIds(), vehicleId, Double.NaN, Double.NaN));
             // Currently, we don't provide the expected pickup / drop off time. Maybe update this in the future.
 
         } else {
@@ -149,12 +149,12 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
             if (selectedVehicleId != null) {
                 eventsManager.processEvent(
                         new PassengerRequestScheduledEvent(timer.getTimeOfDay(), drtRequest.getMode(), drtRequest.getId(),
-                                drtRequest.getPassengerId(), selectedVehicleId, Double.NaN, Double.NaN));
+                                drtRequest.getPassengerIds(), selectedVehicleId, Double.NaN, Double.NaN));
                 //TODO add estimated pickup / arrival time
                 updateVehicleCurrentTask(realTimeVehicleInfoMap.get(selectedVehicleId), now);
             } else {
                 eventsManager.processEvent(new PassengerRequestRejectedEvent(timer.getTimeOfDay(), mode, request.getId(),
-                        passengerId, "No feasible insertion. The spontaneous request is rejected"));
+                        Collections.singletonList(passengerId), "No feasible insertion. The spontaneous request is rejected"));
             }
         }
     }
@@ -209,7 +209,7 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
                     var request = Preconditions.checkNotNull(openRequests.remove(nextStop.getRequest().getPassengerId()),
                             "Request (%s) has not been yet submitted", nextStop.getRequest());
                     stopTask.addDropoffRequest(AcceptedDrtRequest.createFromOriginalRequest(request));
-                    fleetSchedules.requestIdToVehicleMap().remove(request.getPassengerId());
+                    fleetSchedules.requestIdToVehicleMap().remove(request.getPassengerIds().get(0));
                 }
                 schedule.addTask(stopTask);
                 stopsToVisit.remove(0); //remove the first entry in the stops to visit list
@@ -246,7 +246,7 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
 
     // Static functions
     static GeneralRequest createFromDrtRequest(DrtRequest drtRequest) {
-        return new GeneralRequest(drtRequest.getPassengerId(), drtRequest.getFromLink().getId(),
+        return new GeneralRequest(drtRequest.getPassengerIds().get(0), drtRequest.getFromLink().getId(),
                 drtRequest.getToLink().getId(), drtRequest.getEarliestStartTime(), drtRequest.getLatestStartTime(),
                 drtRequest.getLatestArrivalTime());
     }
@@ -288,7 +288,7 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
                         .earliestStartTime(earliestPickupTime)
                         .latestStartTime(latestPickupTime)
                         .latestArrivalTime(latestArrivalTime)
-                        .passengerId(person.getId())
+                        .passengerIds(Collections.singletonList(person.getId()))
                         .mode(mode)
                         .fromLink(startLink)
                         .toLink(endLink)

@@ -90,7 +90,7 @@ public class OnlineAndOfflineDrtOperationModule extends AbstractDvrpModeQSimModu
 
         addModalComponent(QSimScopeForkJoinPoolHolder.class,
                 () -> new QSimScopeForkJoinPoolHolder(drtConfigGroup.numberOfThreads));
-        bindModal(VehicleEntry.EntryFactory.class).toInstance(new VehicleDataEntryFactoryImpl(drtConfigGroup));
+        bindModal(VehicleEntry.EntryFactory.class).toInstance(new VehicleDataEntryFactoryImpl());
 
     }
 }

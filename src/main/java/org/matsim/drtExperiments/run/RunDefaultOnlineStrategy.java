@@ -13,7 +13,7 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
 import org.matsim.drtExperiments.utils.DrtPerformanceQuantification;
-import org.matsim.drtExperiments.run.modules.LinearStopDurationModule;
+import org.matsim.drtExperiments.run.modules.SimpleCumulativeStopDurationModule;
 import picocli.CommandLine;
 
 import java.nio.file.Path;
@@ -40,14 +40,14 @@ public class RunDefaultOnlineStrategy implements MATSimAppCommand {
 
         Config config = ConfigUtils.loadConfig(configPath, new MultiModeDrtConfigGroup(), new DvrpConfigGroup());
         MultiModeDrtConfigGroup multiModeDrtConfig = MultiModeDrtConfigGroup.get(config);
-        config.controler().setOutputDirectory(outputDirectory);
+        config.controller().setOutputDirectory(outputDirectory);
 
         Controler controler = DrtControlerCreator.createControler(config, false);
         controler.addOverridingModule(new DvrpModule(new DvrpBenchmarkTravelTimeModule()));
 
         // Add mode module
         for (DrtConfigGroup drtCfg : multiModeDrtConfig.getModalElements()) {
-            controler.addOverridingModule(new LinearStopDurationModule(drtCfg));
+            controler.addOverridingModule(new SimpleCumulativeStopDurationModule(drtCfg));
         }
         controler.run();
 

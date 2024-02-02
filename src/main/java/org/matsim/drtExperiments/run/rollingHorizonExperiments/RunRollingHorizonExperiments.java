@@ -15,7 +15,7 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.population.PopulationUtils;
 import org.matsim.drtExperiments.run.modules.BypassTravelTimeMatrixModule;
-import org.matsim.drtExperiments.run.modules.LinearStopDurationModule;
+import org.matsim.drtExperiments.run.modules.SimpleCumulativeStopDurationModule;
 import org.matsim.drtExperiments.run.modules.OnlineAndOfflineDrtOperationModule;
 import org.matsim.drtExperiments.utils.DrtPerformanceQuantification;
 import picocli.CommandLine;
@@ -81,7 +81,7 @@ public class RunRollingHorizonExperiments implements MATSimAppCommand {
 
                     Config config = ConfigUtils.loadConfig(configPath, new MultiModeDrtConfigGroup(), new DvrpConfigGroup());
                     MultiModeDrtConfigGroup multiModeDrtConfig = MultiModeDrtConfigGroup.get(config);
-                    config.controler().setOutputDirectory(outputDirectory);
+                    config.controller().setOutputDirectory(outputDirectory);
                     Controler controler = PreplannedDrtControlerCreator.createControler(config, false);
                     controler.addOverridingModule(new DvrpModule(new DvrpBenchmarkTravelTimeModule()));
 
@@ -97,7 +97,7 @@ public class RunRollingHorizonExperiments implements MATSimAppCommand {
                     for (DrtConfigGroup drtCfg : multiModeDrtConfig.getModalElements()) {
                         controler.addOverridingQSimModule(new OnlineAndOfflineDrtOperationModule(prebookedPlans, drtCfg,
                                 horizon, interval, iterations, false, seed, offlineSolver));
-                        controler.addOverridingModule(new LinearStopDurationModule(drtCfg));
+                        controler.addOverridingModule(new SimpleCumulativeStopDurationModule(drtCfg));
                         // If we are doing fully offline optimization, then no need to generate the standard travel time matrix
                         if (prebookedPlansFile.equals("all")) {
                             controler.addOverridingQSimModule(new BypassTravelTimeMatrixModule(drtCfg));
