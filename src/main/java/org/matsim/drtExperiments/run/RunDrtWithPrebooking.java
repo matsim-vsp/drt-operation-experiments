@@ -51,7 +51,13 @@ public class RunDrtWithPrebooking implements MATSimAppCommand {
     private int seed;
 
     public static void main(String[] args) {
-        new RunDrtWithPrebooking().execute(args);
+        if (args==null || args.length==0 ){
+            args = new String[]{
+                    "--output", "output"
+                    , "--config", "scenarios/mielec/mielec_drt_config.xml"
+            };
+        }
+            new RunDrtWithPrebooking().execute( args );
     }
 
     @Override
@@ -98,4 +104,5 @@ public class RunDrtWithPrebooking implements MATSimAppCommand {
 
         return 0;
     }
+
 }
