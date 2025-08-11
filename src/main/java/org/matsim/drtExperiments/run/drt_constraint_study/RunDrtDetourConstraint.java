@@ -32,14 +32,16 @@ public class RunDrtDetourConstraint implements MATSimAppCommand {
         MultiModeDrtConfigGroup multiModeDrtConfigGroup = MultiModeDrtConfigGroup.get(config);
         for (DrtConfigGroup drtConfigGroup : multiModeDrtConfigGroup.getModalElements()) {
             drtConfigGroup.maxAllowedPickupDelay= 120;
-            drtConfigGroup.maxDetourAlpha = 1.5;
-            drtConfigGroup.maxDetourBeta = 300;
+            drtConfigGroup.maxDetourAlpha = 1.0;
+            drtConfigGroup.maxDetourBeta = 720;
             drtConfigGroup.maxAbsoluteDetour = 7200;
 
-            drtConfigGroup.maxWaitTime = 600;
+            drtConfigGroup.maxWaitTime = 1200;
 
             drtConfigGroup.maxTravelTimeAlpha = 10;
             drtConfigGroup.maxTravelTimeBeta = 7200;
+
+            drtConfigGroup.rejectRequestIfMaxWaitOrTravelTimeViolated = false;
         }
 
         Controler controler = DrtControlerCreator.createControler(config, false);

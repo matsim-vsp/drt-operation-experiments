@@ -12,7 +12,7 @@
 	<properties>
 		<maven.compiler.release>17</maven.compiler.release>
 		<matsim.version>16.0-PR2997</matsim.version>
-<!--		<matsim.version>15.0-SNAPSHOT</matsim.version>-->
+<!--		<matsim.version>16.0-SNAPSHOT</matsim.version>-->
 		<jsprit.version>1.8</jsprit.version>
 	</properties>
 
@@ -65,6 +65,12 @@
 			<groupId>org.matsim.contrib</groupId>
 			<artifactId>osm</artifactId>
 			<version>${matsim.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.google.protobuf</groupId>
+					<artifactId>protobuf-javalite</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- jsprit for solving vehicle routing problem-->
@@ -125,6 +131,15 @@
 			<version>3.22.0</version>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- google OR tools -->
+		<!-- https://mvnrepository.com/artifact/com.google.ortools/ortools-java -->
+		<dependency>
+			<groupId>com.google.ortools</groupId>
+			<artifactId>ortools-java</artifactId>
+			<version>9.10.4067</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

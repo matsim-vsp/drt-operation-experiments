@@ -22,28 +22,28 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.matsim.application.ApplicationUtils.globFile;
 
 public class DetourAnalysis {
     public static void main(String[] args) throws IOException {
-        new DetourAnalysis().analyze(Path.of(args[0]));
-    }
-
-    public void analyze(Path outputDirectory) throws IOException {
-        Path outputEventsPath = globFile(outputDirectory, "*output_events.xml.gz*");
-        EventsManager eventManager = EventsUtils.createEventsManager();
+        Path outputDirectory = Path.of(args[0]);
         DetourAnalysisEventsHandler detourAnalysis = new DetourAnalysisEventsHandler(outputDirectory);
-        eventManager.addHandler(detourAnalysis);
-        eventManager.initProcessing();
-
-        MatsimEventsReader matsimEventsReader = DrtEventsReaders.createEventsReader(eventManager);
-        matsimEventsReader.readFile(outputEventsPath.toString());
-
+        detourAnalysis.readEvents();
         detourAnalysis.writeAnalysis();
     }
 
-    class DetourAnalysisEventsHandler implements PassengerRequestSubmittedEventHandler,
+//    public static void readEvents(DetourAnalysisEventsHandler detourAnalysis){
+//        Path outputEventsPath = globFile(detourAnalysis.getOutputDirectory(), "*output_events.xml.gz*");
+//        EventsManager eventManager = EventsUtils.createEventsManager();
+//        eventManager.addHandler(detourAnalysis);
+//        eventManager.initProcessing();
+//        MatsimEventsReader matsimEventsReader = DrtEventsReaders.createEventsReader(eventManager);
+//        matsimEventsReader.readFile(outputEventsPath.toString());
+//    }
+
+    public static class DetourAnalysisEventsHandler implements PassengerRequestSubmittedEventHandler,
             PassengerRequestScheduledEventHandler, PassengerRequestRejectedEventHandler, PassengerPickedUpEventHandler,
             PassengerDroppedOffEventHandler {
         private final Path outputDirectory;
@@ -56,8 +56,9 @@ public class DetourAnalysis {
         private final Map<Id<Person>, Double> actualPickupTimeMap = new HashMap<>();
         private final Map<Id<Person>, Double> arrivalTimeMap = new HashMap<>();
         private final List<Id<Person>> rejectedPersons = new ArrayList<>();
+        private final Map<Id<Person>, Double> waitTimeMap = new HashMap<>();
 
-        DetourAnalysisEventsHandler(Path outputDirectory) {
+        public DetourAnalysisEventsHandler(Path outputDirectory) {
             this.outputDirectory = outputDirectory;
             Path networkPath = globFile(outputDirectory, "*output_network.xml.gz*");
             this.network = NetworkUtils.readNetwork(networkPath.toString());
@@ -90,6 +91,8 @@ public class DetourAnalysis {
         public void handleEvent(PassengerPickedUpEvent event) {
             double actualPickupTime = event.getTime();
             actualPickupTimeMap.put(event.getPersonId(), actualPickupTime);
+            double waitTime = actualPickupTime - submissionTimeMap.get(event.getPersonId());
+            waitTimeMap.put(event.getPersonId(), waitTime);
         }
 
         @Override
@@ -103,7 +106,7 @@ public class DetourAnalysis {
             PassengerRequestScheduledEventHandler.super.reset(iteration);
         }
 
-        void writeAnalysis() throws IOException {
+        public void writeAnalysis() throws IOException {
             String detourAnalysisOutput = outputDirectory.toString() + "/detour-analysis.tsv";
             CSVPrinter csvPrinter = new CSVPrinter(new FileWriter(detourAnalysisOutput), CSVFormat.TDF);
             csvPrinter.printRecord(Arrays.asList("person_id", "submission", "scheduled_pickup", "actual_pickup",
@@ -140,6 +143,25 @@ public class DetourAnalysis {
                 ));
             }
             csvPrinter.close();
+        }
+
+        public List<Id<Person>> getRejectedPersons() {
+            return rejectedPersons;
+        }
+
+        public void readEvents() {
+            Path outputEventsPath = globFile(outputDirectory, "*output_events.xml.gz*");
+            EventsManager eventManager = EventsUtils.createEventsManager();
+            eventManager.addHandler(this);
+            eventManager.initProcessing();
+            MatsimEventsReader matsimEventsReader = DrtEventsReaders.createEventsReader(eventManager);
+            matsimEventsReader.readFile(outputEventsPath.toString());
+        }
+
+        public double get95pctWaitTime() {
+            List<Double> waitingTimes = waitTimeMap.values().stream().sorted().toList();
+            int idx = (int) Math.min(Math.ceil(waitingTimes.size() * 0.95), waitingTimes.size() - 1);
+            return waitingTimes.get(idx);
         }
     }
 }

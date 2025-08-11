@@ -30,9 +30,10 @@ public class RunDefaultDrtConstraints implements MATSimAppCommand {
         config.controller().setOutputDirectory(outputDirectory);
         MultiModeDrtConfigGroup multiModeDrtConfigGroup = MultiModeDrtConfigGroup.get(config);
         for (DrtConfigGroup drtConfigGroup : multiModeDrtConfigGroup.getModalElements()) {
-            drtConfigGroup.maxWaitTime = 600;
+            drtConfigGroup.maxWaitTime = 1200;
             drtConfigGroup.maxTravelTimeAlpha = 1.5;
-            drtConfigGroup.maxTravelTimeBeta = 900;
+            drtConfigGroup.maxTravelTimeBeta = 1200;
+            drtConfigGroup.rejectRequestIfMaxWaitOrTravelTimeViolated = false;
         }
 
         Controler controler = DrtControlerCreator.createControler(config, false);
