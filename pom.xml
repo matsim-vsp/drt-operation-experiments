@@ -12,8 +12,10 @@
 	<properties>
 <!--		<maven.compiler.release>17</maven.compiler.release>-->
 <!--		<matsim.version>15.0-PR2223</matsim.version>-->
-		<matsim.version>15.0</matsim.version>
-<!--		<matsim.version>2026.0-SNAPSHOT</matsim.version>-->
+<!--		<matsim.version>15.0</matsim.version>-->
+<!--		<matsim.version>2025.0</matsim.version>-->
+		<matsim.version>2025.0-SNAPSHOT</matsim.version>
+		<!--		<matsim.version>2026.0-SNAPSHOT</matsim.version>-->
 		<jsprit.version>1.8</jsprit.version>
 	</properties>
 
@@ -67,6 +69,11 @@
 			<artifactId>osm</artifactId>
 			<version>${matsim.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.matsim.contrib</groupId>
+			<artifactId>common</artifactId>
+			<version>${matsim.version}</version>
+		</dependency>
 
 		<!-- jsprit for solving vehicle routing problem-->
 		<dependency>
@@ -104,22 +111,23 @@
 <!--		<dependency>-->
 <!--			<groupId>org.junit.jupiter</groupId>-->
 <!--			<artifactId>junit-jupiter-engine</artifactId>-->
-<!--&lt;!&ndash;			<version>${junit.version}</version>&ndash;&gt;-->
+<!--			<version>${junit.version}</version>-->
 <!--			<scope>test</scope>-->
 <!--		</dependency>-->
 <!--		<dependency>-->
 <!--			<groupId>org.junit.jupiter</groupId>-->
 <!--			<artifactId>junit-jupiter-api</artifactId>-->
-<!--&lt;!&ndash;			<version>${junit.version}</version>&ndash;&gt;-->
+<!--			<version>${junit.version}</version>-->
 <!--			<scope>test</scope>-->
 <!--		</dependency>-->
 <!--		<dependency>-->
 <!--			<groupId>org.junit.jupiter</groupId>-->
 <!--			<artifactId>junit-jupiter</artifactId>-->
-<!--&lt;!&ndash;			<version>${junit.version}</version>&ndash;&gt;-->
+<!--			<version>${junit.version}</version>-->
 <!--			<scope>test</scope>-->
 <!--		</dependency>-->
 		<dependency>
+			<!--MATSim test infrastructure.  Not transitive.-->
 			<groupId>org.matsim</groupId>
 			<artifactId>matsim</artifactId>
 			<version>${matsim.version}</version>
@@ -127,17 +135,26 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
+			<version>6.0.3</version>
+			<!--			(The version comes from upstream.)-->
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>org.matsim</groupId>
 			<artifactId>matsim-examples</artifactId>
 			<version>${matsim.version}</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.assertj</groupId>
-			<artifactId>assertj-core</artifactId>
-			<version>3.22.0</version>
-			<scope>test</scope>
-		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>org.assertj</groupId>-->
+<!--			<artifactId>assertj-core</artifactId>-->
+<!--			<version>3.22.0</version>-->
+<!--			<scope>test</scope>-->
+<!--		</dependency>-->
+
 	</dependencies>
 
 	<build>

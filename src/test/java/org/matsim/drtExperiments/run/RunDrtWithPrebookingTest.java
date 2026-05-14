@@ -1,9 +1,9 @@
 package org.matsim.drtExperiments.run;
 
 import org.apache.logging.log4j.LogManager;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Population;
@@ -11,12 +11,13 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.population.PopulationUtils;
 import org.matsim.testcases.MatsimTestUtils;
+import org.matsim.utils.eventsfilecomparison.ComparisonResult;
 import org.matsim.utils.eventsfilecomparison.EventsFileComparator;
 
 import static org.junit.Assert.assertEquals;
 
 public class RunDrtWithPrebookingTest{
-	@Rule public MatsimTestUtils utils = new MatsimTestUtils();
+	@RegisterExtension public MatsimTestUtils utils = new MatsimTestUtils();
 
 	@Test
 	public void testMain(){
@@ -49,15 +50,15 @@ public class RunDrtWithPrebookingTest{
 			{
 				String expected = utils.getInputDirectory() + "/output_events.xml.gz" ;
 				String actual = utils.getOutputDirectory() + "/output_events.xml.gz" ;
-				var result = EventsUtils.compareEventsFiles( expected, actual );
-				assertEquals( EventsFileComparator.Result.FILES_ARE_EQUAL, result );
+				ComparisonResult result = EventsUtils.compareEventsFiles( expected, actual );
+				assertEquals( ComparisonResult.FILES_ARE_EQUAL, result );
 			}
 
 		} catch ( Exception ee ) {
 			LogManager.getLogger(this.getClass() ).fatal("there was an exception: \n" + ee ) ;
 
 			// if one catches an exception, then one needs to explicitly fail the test:
-			Assert.fail();
+			Assertions.fail();
 		}
 
 	}

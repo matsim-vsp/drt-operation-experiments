@@ -48,7 +48,7 @@ public record RuinAndRecreateOfflineSolver(int maxIterations, Network network, T
         previousSchedules.updateFleetSchedule(network, linkToLinkTravelTimeMatrix, onlineVehicleInfoMap);
 
         // Create insertion calculator
-        InsertionCalculator insertionCalculator = new InsertionCalculator(network, drtConfigGroup.stopDuration, linkToLinkTravelTimeMatrix);
+        InsertionCalculator insertionCalculator = new InsertionCalculator(network, drtConfigGroup.getStopDuration(), linkToLinkTravelTimeMatrix);
 
         // Initialize regret inserter
         OfflineSolverRegretHeuristic regretInserter = new OfflineSolverRegretHeuristic(network, travelTime, drtConfigGroup);

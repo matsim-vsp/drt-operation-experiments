@@ -3,6 +3,8 @@ package org.matsim.drtExperiments.basicStructures;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
+import org.matsim.contrib.dvrp.load.DvrpLoad;
+import org.matsim.contrib.dvrp.load.IntegerLoad;
 
 public class TimetableEntry {
 
@@ -12,13 +14,13 @@ public class TimetableEntry {
     private final StopType stopType;
     private double arrivalTime;
     private double departureTime;
-    private int occupancyBeforeStop;
+    private DvrpLoad occupancyBeforeStop;
     private final double stopDuration;
-    private final int capacity;
+    private final DvrpLoad capacity;
     private double slackTime;
 
     public TimetableEntry(GeneralRequest request, StopType stopType, double arrivalTime,
-                          double departureTime, int occupancyBeforeStop, double stopDuration,
+                          double departureTime, DvrpLoad occupancyBeforeStop, double stopDuration,
                           DvrpVehicle vehicle) {
         this.request = request;
         this.stopType = stopType;
@@ -53,11 +55,13 @@ public class TimetableEntry {
     }
 
     public void increaseOccupancyByOne() {
-        occupancyBeforeStop += 1;
+//        occupancyBeforeStop += 1;
+        occupancyBeforeStop.add( IntegerLoad.fromValue( 1 ) );
     }
 
     public void decreaseOccupancyByOne() {
-        occupancyBeforeStop -= 1;
+//        occupancyBeforeStop -= 1;
+        occupancyBeforeStop.subtract( IntegerLoad.fromValue( 1 ) );
     }
 
     public double getEffectiveDelayIfStopIsDelayedBy(double delay) {
@@ -93,11 +97,18 @@ public class TimetableEntry {
     }
 
     public boolean isVehicleFullBeforeThisStop() {
-        return occupancyBeforeStop >= capacity;
+//        return occupancyBeforeStop >= capacity;
+        return capacity.fitsIn( occupancyBeforeStop );
     }
 
     public boolean isVehicleOverloaded() {
-        return stopType == StopType.PICKUP ? occupancyBeforeStop >= capacity : occupancyBeforeStop > capacity;
+//        return stopType == StopType.PICKUP ? occupancyBeforeStop >= capacity : occupancyBeforeStop > capacity;
+        return stopType == StopType.PICKUP ?
+//                       occupancyBeforeStop >= capacity
+                       capacity.fitsIn( occupancyBeforeStop )
+                       :
+//                       occupancyBeforeStop > capacity
+                       capacity.add( IntegerLoad.fromValue( 1 ) ).fitsIn( occupancyBeforeStop );
     }
 
     // Getter functions
@@ -120,7 +131,7 @@ public class TimetableEntry {
         return request.getToLinkId();
     }
 
-    public int getOccupancyBeforeStop() {
+    public DvrpLoad getOccupancyBeforeStop() {
         return occupancyBeforeStop;
     }
 

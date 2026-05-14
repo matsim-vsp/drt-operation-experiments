@@ -25,11 +25,13 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.contrib.common.zones.Zone;
+import org.matsim.contrib.common.zones.ZoneImpl;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
+import org.matsim.contrib.dvrp.load.IntegerLoad;
 import org.matsim.contrib.dvrp.path.VrpPaths;
 import org.matsim.contrib.dvrp.router.TimeAsTravelDisutility;
-import org.matsim.contrib.zone.Zone;
 import org.matsim.contrib.zone.skims.Matrix;
 import org.matsim.contrib.zone.skims.TravelTimeMatrices;
 import org.matsim.contrib.zone.skims.TravelTimeMatrix;
@@ -79,7 +81,11 @@ public class OfflineSolverJsprit implements OfflineSolver {
             Link currentLink = vehicleInfo.currentLink();
             double divertableTime = vehicleInfo.divertableTime();
 
-            int capacity = vehicle.getCapacity();
+            int capacity = vehicle.getCapacity().getElement( 0 ).intValue() ;
+            // dvrpVehicle#getCapacity used to return a single number!
+
+            // the following generates the jsprit Vehicle!
+
             var vehicleType = VehicleTypeImpl.Builder.newInstance(drtCfg.getMode() + "-vehicle-" + capacity + "-seats")
                     .addCapacityDimension(0, capacity)
                     .build();
@@ -163,7 +169,7 @@ public class OfflineSolverJsprit implements OfflineSolver {
                                     setDeliveryLocation(collectLocationIfAbsent(network.getLinks().get(request.getToLinkId()))).
                                     setPickupTimeWindow(new TimeWindow(vehicleStartTime, vehicleStartTime)).
                                     setPickupServiceTime(0).
-                                    setDeliveryServiceTime(drtCfg.stopDuration).
+                                    setDeliveryServiceTime( drtCfg.getStopDuration() ).
                                     setDeliveryTimeWindow(new TimeWindow(vehicleStartTime, Math.max(request.getLatestArrivalTime(), earliestLatestDropOffTime))).
                                     addSizeDimension(0, 1).
                                     addRequiredSkill(vehicleId.toString()).
@@ -182,8 +188,8 @@ public class OfflineSolverJsprit implements OfflineSolver {
                                     setPickupLocation(collectLocationIfAbsent(network.getLinks().get(request.getFromLinkId()))).
                                     setDeliveryLocation(collectLocationIfAbsent(network.getLinks().get(request.getToLinkId()))).
                                     setPickupTimeWindow(new TimeWindow(request.getEarliestDepartureTime(), Math.max(request.getLatestDepartureTime(), earliestLatestPickUpTime))).
-                                    setPickupServiceTime(drtCfg.stopDuration).
-                                    setDeliveryServiceTime(drtCfg.stopDuration).
+                                    setPickupServiceTime( drtCfg.getStopDuration() ).
+                                    setDeliveryServiceTime( drtCfg.getStopDuration() ).
                                     setDeliveryTimeWindow(new TimeWindow(vehicleStartTime, Math.max(request.getLatestArrivalTime(), earliestLatestDropOffTime))).
                                     addSizeDimension(0, 1).
                                     setPriority(2).
@@ -194,7 +200,7 @@ public class OfflineSolverJsprit implements OfflineSolver {
                             preplannedRequestByShipmentId.put(shipmentId, request);
                         }
                     }
-                    currentTime += drtCfg.stopDuration;
+                    currentTime += drtCfg.getStopDuration();
                 }
                 // Add the request onboard this vehicle to the main pool
                 requestsOnboardEachVehicles.put(vehicleId, requestsOnboardThisVehicle);
@@ -209,8 +215,8 @@ public class OfflineSolverJsprit implements OfflineSolver {
                     setDeliveryLocation(collectLocationIfAbsent(network.getLinks().get(newRequest.getToLinkId()))).
                     setPickupTimeWindow(new TimeWindow(newRequest.getEarliestDepartureTime(), newRequest.getLatestDepartureTime())).
                     setDeliveryTimeWindow(new TimeWindow(newRequest.getEarliestDepartureTime(), newRequest.getLatestArrivalTime())).
-                    setPickupServiceTime(drtCfg.stopDuration).
-                    setDeliveryServiceTime(drtCfg.stopDuration).
+                    setPickupServiceTime( drtCfg.getStopDuration() ).
+                    setDeliveryServiceTime( drtCfg.getStopDuration() ).
                     addSizeDimension(0, 1).
                     setPriority(10).
                     build();
@@ -280,7 +286,8 @@ public class OfflineSolverJsprit implements OfflineSolver {
         for (var route : bestSolution.getRoutes()) {
             var vehicleId = Id.create(route.getVehicle().getId(), DvrpVehicle.class);
             DvrpVehicle vehicle = onlineVehicleInfoMap.get(vehicleId).vehicle();
-            int occupancy = 0;
+//            int occupancy = 0;
+            IntegerLoad occupancy = IntegerLoad.fromValue( 0 );
             for (var activity : route.getActivities()) {
                 var preplannedRequest = preplannedRequestByShipmentId.get(((TourActivity.JobActivity) activity).getJob().getId());
                 boolean isPickup = activity instanceof PickupShipment;
@@ -288,17 +295,19 @@ public class OfflineSolverJsprit implements OfflineSolver {
                     if (!personsOnboard.contains(preplannedRequest.getPassengerId())) {
                         // Add pick up stop if passenger is not yet onboard
                         var preplannedStop = new TimetableEntry(preplannedRequest, TimetableEntry.StopType.PICKUP,
-                                activity.getArrTime(), activity.getEndTime(), occupancy, drtCfg.stopDuration, vehicle);
+                                activity.getArrTime(), activity.getEndTime(), occupancy, drtCfg.getStopDuration(), vehicle);
                         vehicleToPreplannedStops.get(vehicleId).add(preplannedStop);
                     }
                     assignedPassengerToVehicleMap.put(preplannedRequest.getPassengerId(), vehicleId);
-                    occupancy++;
+//                    occupancy++;
+                    occupancy.add( IntegerLoad.fromValue( 1 ));
                 } else {
                     // Add drop off stop
                     var preplannedStop = new TimetableEntry(preplannedRequest, TimetableEntry.StopType.DROP_OFF,
-                            activity.getArrTime(), activity.getEndTime(), occupancy, drtCfg.stopDuration, vehicle);
+                            activity.getArrTime(), activity.getEndTime(), occupancy, drtCfg.getStopDuration(), vehicle);
                     vehicleToPreplannedStops.get(vehicleId).add(preplannedStop);
-                    occupancy--;
+//                    occupancy--;
+                    occupancy.subtract( IntegerLoad.fromValue( 1 ) );
                 }
             }
         }
@@ -392,9 +401,9 @@ public class OfflineSolverJsprit implements OfflineSolver {
 
     private TravelTimeMatrix createTravelTimeMatrix(double time) {
         Map<Node, Zone> zoneByNode = locationByLinkId.keySet()
-                .stream()
-                .flatMap(linkId -> Stream.of(network.getLinks().get(linkId).getFromNode(), network.getLinks().get(linkId).getToNode()))
-                .collect(toMap(n -> n, node -> new Zone(Id.create(node.getId(), Zone.class), "node", node.getCoord()),
+                                                     .stream()
+                                                     .flatMap(linkId -> Stream.of(network.getLinks().get(linkId).getFromNode(), network.getLinks().get(linkId).getToNode()))
+                                                     .collect(toMap(n -> n, node -> new ZoneImpl(Id.create(node.getId(), Zone.class ), null, node.getCoord(), "node"),
                         (zone1, zone2) -> zone1));
         var nodeByZone = EntryStream.of(zoneByNode).invert().toMap();
 //        Matrix nodeToNodeMatrix = TravelTimeMatrices.calculateTravelTimeMatrix(network, nodeByZone, time, travelTime,

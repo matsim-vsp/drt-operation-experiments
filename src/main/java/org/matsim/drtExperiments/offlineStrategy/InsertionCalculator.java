@@ -4,6 +4,8 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
+import org.matsim.contrib.dvrp.load.DvrpLoad;
+import org.matsim.contrib.dvrp.load.IntegerLoad;
 import org.matsim.drtExperiments.basicStructures.FleetSchedules;
 import org.matsim.drtExperiments.basicStructures.GeneralRequest;
 import org.matsim.drtExperiments.basicStructures.OnlineVehicleInfo;
@@ -42,8 +44,14 @@ public record InsertionCalculator(Network network, double stopDuration,
             double totalInsertionCost = timeToPickup + tripTravelTime;
 
             List<TimetableEntry> updatedTimetable = new ArrayList<>();
-            updatedTimetable.add(new TimetableEntry(request, TimetableEntry.StopType.PICKUP, arrivalTimePickUp, departureTimePickUp, 0, stopDuration, vehicleInfo.vehicle()));
-            updatedTimetable.add(new TimetableEntry(request, TimetableEntry.StopType.DROP_OFF, arrivalTimeDropOff, arrivalTimeDropOff + stopDuration, 1, stopDuration, vehicleInfo.vehicle()));
+            {
+                IntegerLoad occupancyBeforeStop = IntegerLoad.fromValue( 0 );
+                updatedTimetable.add( new TimetableEntry( request, TimetableEntry.StopType.PICKUP, arrivalTimePickUp, departureTimePickUp, occupancyBeforeStop, stopDuration, vehicleInfo.vehicle() ) );
+            }
+            {
+                DvrpLoad occupancyBeforeStop = IntegerLoad.fromValue( 1 );
+                updatedTimetable.add(new TimetableEntry(request, TimetableEntry.StopType.DROP_OFF, arrivalTimeDropOff, arrivalTimeDropOff + stopDuration, occupancyBeforeStop, stopDuration, vehicleInfo.vehicle()) );
+            }
             // Note: The departure time of the last stop is actually not meaningful, but this stop may become non-last stop later, therefore, we set the departure time of this stop as if it is a middle stop
             return new InsertionData(updatedTimetable, totalInsertionCost, vehicleInfo);
         }
@@ -109,8 +117,10 @@ public record InsertionCalculator(Network network, double stopDuration,
                 }
                 double departureTimePickUpStop = Math.max(arrivalTimePickUpStop, request.getEarliestDepartureTime()) + stopDuration;
                 pickUpInsertionCost = travelTimeToPickUp;
+//                final int occupancyBeforeStop = 0;
+                IntegerLoad occupancyBeforeStop = IntegerLoad.fromValue( 0 );
                 TimetableEntry pickupStopToInsert = new TimetableEntry(request, TimetableEntry.StopType.PICKUP,
-                        arrivalTimePickUpStop, departureTimePickUpStop, 0, stopDuration, vehicleInfo.vehicle());
+                        arrivalTimePickUpStop, departureTimePickUpStop, occupancyBeforeStop, stopDuration, vehicleInfo.vehicle());
                 temporaryTimetable = insertPickup(originalTimetable, i, pickupStopToInsert, 0);
                 //Appending pickup at the end will not cause any delay to the original timetable
             }
@@ -160,8 +170,10 @@ public record InsertionCalculator(Network network, double stopDuration,
                     double departureTimeDropOffStop = arrivalTimeDropOffStop + stopDuration;
                     if (totalInsertionCost < insertionCost) {
                         insertionCost = totalInsertionCost;
+//                        final int occupancyBeforeStop = 1;
+                        IntegerLoad occupancyBeforeStop = IntegerLoad.fromValue( 1 );
                         TimetableEntry dropOffStopToInsert = new TimetableEntry(request, TimetableEntry.StopType.DROP_OFF,
-                                arrivalTimeDropOffStop, departureTimeDropOffStop, 1, stopDuration, vehicleInfo.vehicle());
+                                arrivalTimeDropOffStop, departureTimeDropOffStop, occupancyBeforeStop, stopDuration, vehicleInfo.vehicle());
                         candidateTimetable = insertDropOff(temporaryTimetable, j, dropOffStopToInsert, 0);
                     }
                 }

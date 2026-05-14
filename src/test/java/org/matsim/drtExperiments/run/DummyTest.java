@@ -1,11 +1,12 @@
 package org.matsim.drtExperiments.run;
 
-import org.junit.Rule;
-import org.junit.Test;
 import org.matsim.testcases.MatsimTestUtils;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+
 
 public class DummyTest {
-    @Rule
+    @RegisterExtension
     public MatsimTestUtils utils = new MatsimTestUtils();
 
     @Test
@@ -15,5 +16,7 @@ public class DummyTest {
         double y = 2;
         double z = x + y;
         assert x + y == z : "some thing is wrong!!!";
+
+
     }
 }

@@ -2,6 +2,7 @@ package org.matsim.drtExperiments.run.modules;
 
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Population;
+import org.matsim.contrib.drt.extension.services.optimizer.DrtServiceEntryFactory;
 import org.matsim.contrib.drt.optimizer.DrtOptimizer;
 import org.matsim.contrib.drt.optimizer.QSimScopeForkJoinPoolHolder;
 import org.matsim.contrib.drt.optimizer.VehicleDataEntryFactoryImpl;
@@ -9,6 +10,7 @@ import org.matsim.contrib.drt.optimizer.VehicleEntry;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.drt.schedule.DrtTaskFactory;
 import org.matsim.contrib.dvrp.fleet.Fleet;
+import org.matsim.contrib.dvrp.load.DvrpLoadType;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeQSimModule;
 import org.matsim.contrib.dvrp.schedule.ScheduleTimingUpdater;
 import org.matsim.contrib.zone.skims.TravelTimeMatrix;
@@ -37,8 +39,8 @@ public class OnlineAndOfflineDrtOperationModule extends AbstractDvrpModeQSimModu
     private final long seed;
     private final OfflineSolverType offlineSolverType;
 
-    public OnlineAndOfflineDrtOperationModule(Population prebookedPlans, DrtConfigGroup drtConfigGroup, double horizon,
-                                              double interval, int maxIterations, boolean multiThread, long seed, OfflineSolverType type) {
+    public OnlineAndOfflineDrtOperationModule( Population prebookedPlans, DrtConfigGroup drtConfigGroup, double horizon,
+                                               double interval, int maxIterations, boolean multiThread, long seed, OfflineSolverType type ) {
         super(drtConfigGroup.getMode());
         this.prebookedPlans = prebookedPlans;
         this.drtConfigGroup = drtConfigGroup;
@@ -62,12 +64,12 @@ public class OnlineAndOfflineDrtOperationModule extends AbstractDvrpModeQSimModu
                 getter.getModal(QSimScopeForkJoinPoolHolder.class).getPool(),
                 getter.getModal(VehicleEntry.EntryFactory.class),
                 getter.getModal(OfflineSolver.class),
-                getter.getModal(OnlineSolver.class),
+                getter.getModal( OnlineSolver.class ),
                 getter.get(Population.class), horizon, interval, prebookedPlans)));
 
         bindModal(OnlineSolver.class).toProvider(modalProvider(
-                getter -> new OnlineSolverBasicInsertionStrategy(getter.getModal(Network.class), drtConfigGroup,
-                        getter.getModal(TravelTimeMatrix.class), getter.getModal(TravelTime.class),
+                getter -> new OnlineSolverBasicInsertionStrategy(getter.getModal(Network.class ), drtConfigGroup,
+                        getter.getModal( TravelTimeMatrix.class ), getter.getModal(TravelTime.class ),
                         getter.getModal(TravelDisutilityFactory.class).createTravelDisutility(getter.getModal(TravelTime.class)))));
 
         switch (offlineSolverType) {
@@ -89,8 +91,13 @@ public class OnlineAndOfflineDrtOperationModule extends AbstractDvrpModeQSimModu
         }
 
         addModalComponent(QSimScopeForkJoinPoolHolder.class,
-                () -> new QSimScopeForkJoinPoolHolder(drtConfigGroup.numberOfThreads));
-        bindModal(VehicleEntry.EntryFactory.class).toInstance(new VehicleDataEntryFactoryImpl(drtConfigGroup));
+                () -> new QSimScopeForkJoinPoolHolder( drtConfigGroup.getNumberOfThreads() ) );
+
+//        bindModal(VehicleEntry.EntryFactory.class ).toInstance(new VehicleDataEntryFactoryImpl(drtConfigGroup) );
+        // the above is what I found, but the ctor taking drtConfigGroup as an arg no longer exists.  Replacing by the below w/o knowing if it is correct:
+        bindModal(VehicleEntry.EntryFactory.class).toProvider(modalProvider(getter ->
+                                                                                    new VehicleDataEntryFactoryImpl( getter.getModal(DvrpLoadType.class ) ) ) ).asEagerSingleton();
+
 
     }
 }

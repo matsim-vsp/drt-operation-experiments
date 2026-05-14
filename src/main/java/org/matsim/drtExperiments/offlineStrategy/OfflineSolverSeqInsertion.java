@@ -21,7 +21,7 @@ public class OfflineSolverSeqInsertion implements OfflineSolver {
     public OfflineSolverSeqInsertion(Network network, TravelTime travelTime, DrtConfigGroup drtConfigGroup) {
         this.network = network;
         this.travelTime = travelTime;
-        this.stopDuration = drtConfigGroup.stopDuration;
+        this.stopDuration = drtConfigGroup.getStopDuration();
     }
 
     @Override

@@ -6,6 +6,8 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
+import org.matsim.contrib.dvrp.load.DvrpLoad;
+import org.matsim.contrib.dvrp.load.IntegerLoad;
 import org.matsim.contrib.dvrp.path.VrpPaths;
 import org.matsim.contrib.zone.skims.TravelTimeMatrix;
 import org.matsim.core.router.speedy.SpeedyALTFactory;
@@ -33,11 +35,14 @@ public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
     public OnlineSolverBasicInsertionStrategy(Network network, DrtConfigGroup drtConfigGroup, TravelTimeMatrix travelTimeMatrix,
                                        TravelTime travelTime, TravelDisutility travelDisutility) {
         this.network = network;
-        this.stopDuration = drtConfigGroup.stopDuration;
+        this.stopDuration = drtConfigGroup.getStopDuration();
         this.travelTimeMatrix = travelTimeMatrix;
         this.travelTime = travelTime;
         this.router = new SpeedyALTFactory().createPathCalculator(network, travelDisutility, travelTime);
     }
+
+    private static final DvrpLoad loadZero = IntegerLoad.fromValue( 0 );
+    private static final DvrpLoad loadOne = IntegerLoad.fromValue( 0 );
 
     @Override
     public Id<DvrpVehicle> insert(DrtRequest request, Map<Id<DvrpVehicle>, List<TimetableEntry>> timetables,
@@ -77,8 +82,8 @@ public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
                     bestInsertionCost = totalInsertionCost;
                     selectedVehicle = vehicleInfo.vehicle();
                     updatedTimetable = new ArrayList<>();
-                    updatedTimetable.add(new TimetableEntry(spontaneousRequest, TimetableEntry.StopType.PICKUP, arrivalTimePickUp, arrivalTimePickUp + stopDuration, 0, stopDuration, selectedVehicle));
-                    updatedTimetable.add(new TimetableEntry(spontaneousRequest, TimetableEntry.StopType.DROP_OFF, arrivalTimeDropOff, arrivalTimeDropOff + stopDuration, 1, stopDuration, selectedVehicle));
+                    updatedTimetable.add(new TimetableEntry(spontaneousRequest, TimetableEntry.StopType.PICKUP, arrivalTimePickUp, arrivalTimePickUp + stopDuration, loadZero, stopDuration, selectedVehicle));
+                    updatedTimetable.add(new TimetableEntry(spontaneousRequest, TimetableEntry.StopType.DROP_OFF, arrivalTimeDropOff, arrivalTimeDropOff + stopDuration, loadOne, stopDuration, selectedVehicle));
                     // Note: The departure time of the last stop is actually not meaningful, but this stop may become non-last stop later, therefore, we set the departure time of this stop as if it is a middle stop
                 }
                 continue;
@@ -165,7 +170,7 @@ public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
 
                             if (isDropOffFeasible && totalInsertionCost < bestInsertionCost) {
                                 TimetableEntry dropOffStopToInsert = new TimetableEntry(spontaneousRequest, TimetableEntry.StopType.DROP_OFF,
-                                        dropOffTime, dropOffTime + stopDuration, 1, stopDuration, vehicleInfo.vehicle());
+                                        dropOffTime, dropOffTime + stopDuration, loadOne, stopDuration, vehicleInfo.vehicle());
                                 updatedTimetable = insertDropOff(temporaryTimetable, j + 1, dropOffStopToInsert, detourC + stopDuration);
                                 bestInsertionCost = totalInsertionCost;
                                 selectedVehicle = vehicleInfo.vehicle();
@@ -187,9 +192,9 @@ public class OnlineSolverBasicInsertionStrategy implements OnlineSolver {
                     double totalInsertionCost = timeToPickUp + tripTravelTime;
                     if (totalInsertionCost < bestInsertionCost) {
                         TimetableEntry pickupStopToInsert = new TimetableEntry(spontaneousRequest, TimetableEntry.StopType.PICKUP,
-                                pickupTime, pickupTime + stopDuration, 0, stopDuration, vehicleInfo.vehicle());
+                                pickupTime, pickupTime + stopDuration, loadZero, stopDuration, vehicleInfo.vehicle());
                         TimetableEntry dropOffStopToInsert = new TimetableEntry(spontaneousRequest, TimetableEntry.StopType.DROP_OFF,
-                                dropOffTime, dropOffTime + stopDuration, 1, stopDuration, vehicleInfo.vehicle());
+                                dropOffTime, dropOffTime + stopDuration, loadOne, stopDuration, vehicleInfo.vehicle());
                         List<TimetableEntry> temporaryTimetable = insertPickup(originalTimetable, originalTimetable.size(), pickupStopToInsert, timeToPickUp + stopDuration);
 
                         updatedTimetable = insertDropOff(temporaryTimetable, temporaryTimetable.size(), dropOffStopToInsert, tripTravelTime + stopDuration);

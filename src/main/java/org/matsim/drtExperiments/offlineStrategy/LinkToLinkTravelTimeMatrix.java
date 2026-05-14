@@ -5,10 +5,11 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
+import org.matsim.contrib.common.zones.Zone;
+import org.matsim.contrib.common.zones.ZoneImpl;
 import org.matsim.contrib.dvrp.fleet.DvrpVehicle;
 import org.matsim.contrib.dvrp.path.VrpPaths;
 import org.matsim.contrib.dvrp.router.TimeAsTravelDisutility;
-import org.matsim.contrib.zone.Zone;
 import org.matsim.contrib.zone.skims.Matrix;
 import org.matsim.contrib.zone.skims.TravelTimeMatrices;
 import org.matsim.contrib.zone.skims.TravelTimeMatrix;
@@ -117,7 +118,7 @@ public class LinkToLinkTravelTimeMatrix {
         Map<Node, Zone> zoneByNode = relevantLinks
                 .stream()
                 .flatMap(linkId -> Stream.of(network.getLinks().get(linkId).getFromNode(), network.getLinks().get(linkId).getToNode()))
-                .collect(toMap(n -> n, node -> new Zone(Id.create(node.getId(), Zone.class), "node", node.getCoord()),
+                .collect(toMap(n -> n, node -> new ZoneImpl(Id.create(node.getId(), Zone.class ), null, node.getCoord(), "node"),
                         (zone1, zone2) -> zone1));
         var nodeByZone = EntryStream.of(zoneByNode).invert().toMap();
 //        Matrix nodeToNodeMatrix = TravelTimeMatrices.calculateTravelTimeMatrix(network, nodeByZone, time, travelTime,

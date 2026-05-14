@@ -23,7 +23,7 @@ public class OfflineSolverRegretHeuristic implements OfflineSolver {
     public OfflineSolverRegretHeuristic(Network network, TravelTime travelTime, DrtConfigGroup drtConfigGroup) {
         this.network = network;
         this.travelTime = travelTime;
-        this.stopDuration = drtConfigGroup.stopDuration;
+        this.stopDuration = drtConfigGroup.getStopDuration();
     }
 
     @Override
