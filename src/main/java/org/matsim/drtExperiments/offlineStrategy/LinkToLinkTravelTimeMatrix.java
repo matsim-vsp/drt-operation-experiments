@@ -12,6 +12,7 @@ import org.matsim.contrib.zone.Zone;
 import org.matsim.contrib.zone.skims.Matrix;
 import org.matsim.contrib.zone.skims.TravelTimeMatrices;
 import org.matsim.contrib.zone.skims.TravelTimeMatrix;
+import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.drtExperiments.basicStructures.FleetSchedules;
 import org.matsim.drtExperiments.basicStructures.GeneralRequest;
@@ -119,8 +120,12 @@ public class LinkToLinkTravelTimeMatrix {
                 .collect(toMap(n -> n, node -> new Zone(Id.create(node.getId(), Zone.class), "node", node.getCoord()),
                         (zone1, zone2) -> zone1));
         var nodeByZone = EntryStream.of(zoneByNode).invert().toMap();
-        Matrix nodeToNodeMatrix = TravelTimeMatrices.calculateTravelTimeMatrix(network, nodeByZone, time, travelTime,
-                new TimeAsTravelDisutility(travelTime), Runtime.getRuntime().availableProcessors());
+//        Matrix nodeToNodeMatrix = TravelTimeMatrices.calculateTravelTimeMatrix(network, nodeByZone, time, travelTime,
+//                new TimeAsTravelDisutility(travelTime), Runtime.getRuntime().availableProcessors());
+        TravelDisutility travelDisutility = new TimeAsTravelDisutility( travelTime );
+        int numberOfThreads = Runtime.getRuntime().availableProcessors();
+        TravelTimeMatrices.RoutingParams params = new TravelTimeMatrices.RoutingParams( network, travelTime, travelDisutility, numberOfThreads  );
+        Matrix nodeToNodeMatrix = TravelTimeMatrices.calculateTravelTimeMatrix(params, nodeByZone, time );
 
         return (fromNode, toNode, departureTime) -> nodeToNodeMatrix.get(zoneByNode.get(fromNode), zoneByNode.get(toNode));
     }
