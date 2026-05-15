@@ -2,6 +2,7 @@ package org.matsim.drtExperiments.run;
 
 import org.matsim.api.core.v01.population.Population;
 import org.matsim.application.MATSimAppCommand;
+import org.matsim.application.MATSimApplication;
 import org.matsim.contrib.drt.analysis.afterSimAnalysis.DrtVehicleStoppingTaskWriter;
 import org.matsim.contrib.drt.extension.preplanned.optimizer.WaitForStopTask;
 import org.matsim.contrib.drt.extension.preplanned.run.PreplannedDrtControlerCreator;
@@ -10,8 +11,10 @@ import org.matsim.contrib.drt.run.MultiModeDrtConfigGroup;
 import org.matsim.contrib.dvrp.benchmark.DvrpBenchmarkTravelTimeModule;
 import org.matsim.contrib.dvrp.run.DvrpConfigGroup;
 import org.matsim.contrib.dvrp.run.DvrpModule;
+import org.matsim.contrib.otfvis.OTFVisLiveModule;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
+import org.matsim.core.config.groups.ControllerConfigGroup;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.population.PopulationUtils;
 import org.matsim.drtExperiments.run.modules.BypassTravelTimeMatrixModule;
@@ -21,6 +24,7 @@ import org.matsim.drtExperiments.utils.DrtPerformanceQuantification;
 import picocli.CommandLine;
 
 import java.nio.file.Path;
+import java.util.Map;
 
 public class RunDrtWithPrebooking implements MATSimAppCommand {
     @CommandLine.Option(names = "--config", description = "path to config file", required = true)
@@ -47,6 +51,9 @@ public class RunDrtWithPrebooking implements MATSimAppCommand {
     @CommandLine.Option(names = "--seed", description = "random seed", defaultValue = "0")
     private int seed;
 
+    @CommandLine.Option(names = {"-c:", "--config:"}, arity = "0..*", description = "Overwrite config values (e.g. --config:controler.runId=123)")
+    private Map<String, String> configValues;
+
     public static void main(String[] args) {
         if (args==null || args.length==0 ){
             args = new String[]{
@@ -65,11 +72,19 @@ public class RunDrtWithPrebooking implements MATSimAppCommand {
         MultiModeDrtConfigGroup multiModeDrtConfig = MultiModeDrtConfigGroup.get(config);
         config.controller().setOutputDirectory(outputDirectory);
 
+        config.controller().setCompressionType( ControllerConfigGroup.CompressionType.gzip );
+        /// yyyy {@link RunDrtWithPrebooking} is not able to parse 	"--config:controller.compressionType=gz".  I think that it
+        /// would be better to classes such as this one here extend {@link MATSimApplication} rather than (re)implement
+        /// {@link MATSimAppCommand}.  But it is also not possible to replace one with the other; that would need more effort.
+        /// In consequence, I am hardcoding gz encoding for the time being since that is easier with regression tests.  kai, may'26
+
         // ===
         // ===
 
         Controler controler = PreplannedDrtControlerCreator.createControler(config, false);
         controler.addOverridingModule(new DvrpModule(new DvrpBenchmarkTravelTimeModule()));
+
+//        controler.addOverridingModule( new OTFVisLiveModule() );
 
         // Read pre-booked trips (if not specified, then we assume all the trips are pre-booked)
         Population prebookedPlans;

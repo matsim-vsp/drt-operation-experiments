@@ -3,10 +3,7 @@ package org.matsim.drtExperiments.run.modules;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Population;
 import org.matsim.contrib.drt.extension.services.optimizer.DrtServiceEntryFactory;
-import org.matsim.contrib.drt.optimizer.DrtOptimizer;
-import org.matsim.contrib.drt.optimizer.QSimScopeForkJoinPoolHolder;
-import org.matsim.contrib.drt.optimizer.VehicleDataEntryFactoryImpl;
-import org.matsim.contrib.drt.optimizer.VehicleEntry;
+import org.matsim.contrib.drt.optimizer.*;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
 import org.matsim.contrib.drt.schedule.DrtTaskFactory;
 import org.matsim.contrib.dvrp.fleet.Fleet;
@@ -96,8 +93,13 @@ public class OnlineAndOfflineDrtOperationModule extends AbstractDvrpModeQSimModu
 //        bindModal(VehicleEntry.EntryFactory.class ).toInstance(new VehicleDataEntryFactoryImpl(drtConfigGroup) );
         // the above is what I found, but the ctor taking drtConfigGroup as an arg no longer exists.  Replacing by the below w/o knowing if it is correct:
         bindModal(VehicleEntry.EntryFactory.class).toProvider(modalProvider(getter ->
-                                                                                    new VehicleDataEntryFactoryImpl( getter.getModal(DvrpLoadType.class ) ) ) ).asEagerSingleton();
+                                                                                    new VehicleDataEntryFactoryImpl( getter.getModal(DvrpLoadType.class), getter.getModal( StopWaypointFactory.class ) ) ) )
+                                                  .asEagerSingleton();
 
+        bindModal( StopWaypointFactory.class ).toProvider( modalProvider( getter ->
+                                                                                  new StopWaypointFactoryImpl( getter.getModal( DvrpLoadType.class ), true )
+                                                                        ) );
+        // (yy I am just guessing this. In particular, I am guessing the value of scheduleWaitBeforeDrive.  kai, may'26)
 
     }
 }

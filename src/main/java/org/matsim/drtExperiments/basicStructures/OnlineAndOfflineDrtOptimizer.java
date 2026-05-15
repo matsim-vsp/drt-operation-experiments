@@ -11,6 +11,7 @@ import org.matsim.api.core.v01.population.Population;
 import org.matsim.contrib.drt.extension.preplanned.optimizer.WaitForStopTask;
 import org.matsim.contrib.drt.optimizer.DrtOptimizer;
 import org.matsim.contrib.drt.optimizer.VehicleEntry;
+import org.matsim.contrib.drt.optimizer.constraints.DrtRouteConstraints;
 import org.matsim.contrib.drt.passenger.AcceptedDrtRequest;
 import org.matsim.contrib.drt.passenger.DrtRequest;
 import org.matsim.contrib.drt.run.DrtConfigGroup;
@@ -204,14 +205,16 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
             } else {
                 // We are ready for the stop task! --> Add stop task to the schedule
                 var stopTask = taskFactory.createStopTask(vehicle, currentTime, currentTime + stopDuration, currentLink);
+                double pickupDuration = 2 * 60;
+                double dropoffDuration = 60;
                 if (nextStop.getStopType() == TimetableEntry.StopType.PICKUP) {
                     var request = Preconditions.checkNotNull(openRequests.get(nextStop.getRequest().getPassengerId()),
                             "Request (%s) has not been yet submitted", nextStop.getRequest());
-                    stopTask.addPickupRequest(AcceptedDrtRequest.createFromOriginalRequest(request));
+                    stopTask.addPickupRequest(AcceptedDrtRequest.createFromOriginalRequest(request, pickupDuration, dropoffDuration ));
                 } else {
                     var request = Preconditions.checkNotNull(openRequests.remove(nextStop.getRequest().getPassengerId()),
                             "Request (%s) has not been yet submitted", nextStop.getRequest());
-                    stopTask.addDropoffRequest(AcceptedDrtRequest.createFromOriginalRequest(request));
+                    stopTask.addDropoffRequest(AcceptedDrtRequest.createFromOriginalRequest(request, pickupDuration, dropoffDuration ));
                     fleetSchedules.requestIdToVehicleMap().remove(request.getPassengerIds().get(0));
                 }
                 schedule.addTask(stopTask);
@@ -272,9 +275,9 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
     private void readPrebookedRequests(Population plans, Population prebookedTrips) {
 
         // yyyy the following seems to have been 2025.0.  I think/hope that there was improvemente beyond this later. kai, may'26
-        final double maxWaitTime = drtCfg.addOrGetDrtOptimizationConstraintsParams().addOrGetDefaultDrtOptimizationConstraintsSet().maxWaitTime;
-        final double maxTravelTimeAlpha = drtCfg.addOrGetDrtOptimizationConstraintsParams().addOrGetDefaultDrtOptimizationConstraintsSet().maxTravelTimeAlpha;
-        final double maxTravelTimeBeta = drtCfg.addOrGetDrtOptimizationConstraintsParams().addOrGetDefaultDrtOptimizationConstraintsSet().maxTravelTimeBeta;
+        final double maxWaitTime = drtCfg.addOrGetDrtOptimizationConstraintsParams().addOrGetDefaultDrtOptimizationConstraintsSet().getMaxWaitTime();
+        final double maxTravelTimeAlpha = drtCfg.addOrGetDrtOptimizationConstraintsParams().addOrGetDefaultDrtOptimizationConstraintsSet().getMaxTravelTimeAlpha();
+        final double maxTravelTimeBeta = drtCfg.addOrGetDrtOptimizationConstraintsParams().addOrGetDefaultDrtOptimizationConstraintsSet().getMaxTravelTimeBeta();
 
         int counter = 0;
         for (Person person : plans.getPersons().values()) {
@@ -288,20 +291,32 @@ public class OnlineAndOfflineDrtOptimizer implements DrtOptimizer {
                 var startLink = network.getLinks().get(leg.getRoute().getStartLinkId());
                 var endLink = network.getLinks().get(leg.getRoute().getEndLinkId());
                 double earliestPickupTime = leg.getDepartureTime().seconds();
-                double latestPickupTime = earliestPickupTime + maxWaitTime;
+//                double latestPickupTime = earliestPickupTime + maxWaitTime;
                 double estimatedDirectTravelTime = VrpPaths.calcAndCreatePath(startLink, endLink, earliestPickupTime, router, travelTime).getTravelTime();
-                double latestArrivalTime = earliestPickupTime + maxTravelTimeAlpha * estimatedDirectTravelTime + maxTravelTimeBeta;
+//                double latestArrivalTime = earliestPickupTime + maxTravelTimeAlpha * estimatedDirectTravelTime + maxTravelTimeBeta;
+
+                double maxRideDuration = maxTravelTimeAlpha * estimatedDirectTravelTime + maxTravelTimeBeta;
+                double maxTravelDuration = maxWaitTime + maxRideDuration;
+                double maxWaitDuration = maxWaitTime;
+                double maxPickupDelay = maxWaitTime;
+                // (yy I do not know the difference between maxWaitDuration and maxPickupDelay. kai, may'26)
+                double lateDiversionThreshold = 0;
+                boolean allowRejection = false;
+                DrtRouteConstraints constraints = new DrtRouteConstraints( maxTravelDuration, maxRideDuration, maxWaitDuration, maxPickupDelay, lateDiversionThreshold, allowRejection );
+
                 DrtRequest drtRequest = DrtRequest.newBuilder()
-                        .id(Id.create(person.getId().toString() + "_" + counter, Request.class))
-                        .submissionTime(earliestPickupTime)
-                        .earliestStartTime(earliestPickupTime)
-                        .latestStartTime(latestPickupTime)
-                        .latestArrivalTime(latestArrivalTime)
-                        .passengerIds( Collections.singletonList( person.getId() ) )
-                        .mode(mode)
-                        .fromLink(startLink)
-                        .toLink(endLink)
-                        .build();
+                                                  .id(Id.create(person.getId().toString() + "_" + counter, Request.class))
+                                                  .submissionTime(earliestPickupTime)
+                                                  .earliestDepartureTime(earliestPickupTime)
+//                        .latestDepartureTime(latestPickupTime)
+//                        .latestArrivalTime(latestArrivalTime)
+                                                  // the above no longer exists; I am replacing it by the constraints without fully understanding what I am doing
+                                                  .constraints( constraints )
+                                                  .passengerIds( Collections.singletonList( person.getId() ) )
+                                                  .mode(mode)
+                                                  .fromLink(startLink)
+                                                  .toLink(endLink)
+                                                  .build();
                 prebookedRequests.add(drtRequest);
                 counter++;
             }
